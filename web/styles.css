@@ -32,6 +32,10 @@ button { width: 100%; min-height: 44px; }
 label { display: grid; gap: 7px; color: var(--muted); font-size: 13px; font-weight: 700; }
 input, select { width: 100%; min-height: 42px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--text); font: inherit; padding: 8px 10px; }
 input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(11, 107, 203, 0.14); outline: none; }
+.autocomplete { position: relative; }
+.autocomplete-options { position: absolute; z-index: 10; top: calc(100% + 4px); left: 0; right: 0; max-height: 236px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; box-shadow: 0 14px 30px rgba(23, 32, 51, 0.14); padding: 6px; }
+.autocomplete-option { display: block; width: 100%; min-height: 36px; border: 0; border-radius: 6px; background: transparent; color: var(--text); font: inherit; font-weight: 600; text-align: left; padding: 8px 10px; }
+.autocomplete-option:hover, .autocomplete-option:focus { background: var(--soft); outline: none; }
 .result { display: grid; gap: 10px; min-height: 164px; margin-top: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--soft); padding: 14px; }
 .metric, .total { display: flex; justify-content: space-between; gap: 12px; }
 .metric span, .total span { color: var(--muted); }

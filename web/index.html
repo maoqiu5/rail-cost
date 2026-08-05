@@ -27,8 +27,7 @@
           </div>
           <form id="railForm" class="form">
             <label><span>换装口岸</span><select name="border"><option value="满洲里">满洲里</option><option value="二连">二连</option></select></label>
-            <label><span>目的站</span><input id="railDestination" list="railDestinationList" placeholder="输入中文、英文或下拉选择"><datalist id="railDestinationList"></datalist></label>
-            <label><span>站编</span><input id="railStationCode" list="railStationCodeList" placeholder="可输入站编"><datalist id="railStationCodeList"></datalist></label>
+            <label class="autocomplete"><span>目的站</span><input id="railDestination" autocomplete="off" placeholder="输入中文、英文或点击选择"><div id="railDestinationOptions" class="autocomplete-options" role="listbox" hidden></div></label>
             <div class="row">
               <label><span>箱型</span><select name="containerSize"><option value="40">40尺</option><option value="20">20尺</option></select></label>
               <label><span>运输类型</span><select name="ownership"><option value="SOC">SOC</option><option value="COC">COC</option></select></label>
