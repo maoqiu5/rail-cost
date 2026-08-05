@@ -3,12 +3,19 @@ import {
   calculateRailCost,
   calculateLeaseCost,
   findRailDestination,
+  findRailDestinationFromInput,
   getAvailableLeasePickups,
 } from "../web/calculator.js";
 
 const vorsino = findRailDestination("Vorsino");
 assert.equal(vorsino.stationCode, "183502");
 assert.equal(vorsino.nameCn, "沃尔西诺");
+
+assert.equal(
+  findRailDestinationFromInput("谢利亚基诺 / Selyatino / 181102")?.stationCode,
+  "181102",
+  "destination input label should resolve to the newly selected station",
+);
 
 assert.deepEqual(
   calculateRailCost({

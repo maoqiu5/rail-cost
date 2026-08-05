@@ -1,4 +1,10 @@
-import { RAIL_DESTINATIONS, LEASE_PICKUPS, calculateRailCost, calculateLeaseCost } from "./calculator.js";
+import {
+  RAIL_DESTINATIONS,
+  LEASE_PICKUPS,
+  calculateRailCost,
+  calculateLeaseCost,
+  findRailDestinationFromInput,
+} from "./calculator.js";
 
 const railDestinationInput = document.querySelector("#railDestination");
 const railStationCodeInput = document.querySelector("#railStationCode");
@@ -23,13 +29,17 @@ function resolveDestination() {
     RAIL_DESTINATIONS.find((item) => [item.nameCn, item.nameEn, item.stationCode, optionLabel(item)].some((value) => String(value).toLowerCase() === typed));
 }
 
+function resolveDestinationInputOnly() {
+  return findRailDestinationFromInput(railDestinationInput.value);
+}
+
 function resolvePickup() {
   const typed = pickupInput.value.trim().toLowerCase();
   return LEASE_PICKUPS.find((item) => [item.code, item.nameCn, item.nameEn, `${item.nameCn} / ${item.nameEn}`].some((value) => String(value).toLowerCase() === typed));
 }
 
 railDestinationInput.addEventListener("change", () => {
-  const destination = resolveDestination();
+  const destination = resolveDestinationInputOnly();
   if (destination) railStationCodeInput.value = destination.stationCode;
 });
 

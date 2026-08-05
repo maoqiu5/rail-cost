@@ -50,6 +50,15 @@ export function findRailDestination(query) {
   );
 }
 
+export function findRailDestinationFromInput(query) {
+  const normalized = String(query || "").trim().toLowerCase();
+  return RAIL_DESTINATIONS.find((item) =>
+    [item.nameCn, item.nameEn, item.stationCode, `${item.nameCn} / ${item.nameEn} / ${item.stationCode}`].some((value) =>
+      String(value).toLowerCase() === normalized,
+    ),
+  );
+}
+
 export function calculateRailCost({ border, destinationCode, containerSize, ownership }) {
   const destination = findRailDestination(destinationCode);
   if (!destination) return unavailable("未找到目的站");
