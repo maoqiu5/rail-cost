@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>境外段成本查询</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="page">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Rail Cost Desk</p>
+          <h1>境外段成本查询</h1>
+        </div>
+        <nav class="downloads" aria-label="原始报价单下载">
+          <a href="./data/TOP客户-全铁公共报价单2026.08.01.pdf" download>公共报价单</a>
+          <a href="./data/箱使费2026.08.01-2026.08.31pdf.pdf" download>箱使费</a>
+        </nav>
+      </header>
+
+      <section class="grid">
+        <article class="panel">
+          <div class="panel-heading">
+            <h2>境外段运价成本</h2>
+            <p>满洲里按 8 月公共表价调整，二连按指定固定成本。</p>
+          </div>
+          <form id="railForm" class="form">
+            <label><span>换装口岸</span><select name="border"><option value="满洲里">满洲里</option><option value="二连">二连</option></select></label>
+            <label><span>目的站</span><input id="railDestination" list="railDestinationList" placeholder="输入中文、英文或下拉选择"><datalist id="railDestinationList"></datalist></label>
+            <label><span>站编</span><input id="railStationCode" list="railStationCodeList" placeholder="可输入站编"><datalist id="railStationCodeList"></datalist></label>
+            <div class="row">
+              <label><span>箱型</span><select name="containerSize"><option value="40">40尺</option><option value="20">20尺</option></select></label>
+              <label><span>运输类型</span><select name="ownership"><option value="SOC">SOC</option><option value="COC">COC</option></select></label>
+            </div>
+            <button type="submit">查询成本</button>
+          </form>
+          <div id="railResult" class="result"><p class="empty">选择口岸、目的站和箱型后查询。</p></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-heading">
+            <h2>TC 箱租箱价格</h2>
+            <p>按提箱地表价和口岸规则计算。</p>
+          </div>
+          <form id="leaseForm" class="form">
+            <label><span>还箱口岸</span><select name="leaseBorder"><option value="满洲里">满洲里</option><option value="二连">二连</option></select></label>
+            <label><span>提箱地</span><input id="pickup" list="pickupList" placeholder="输入中文、英文或下拉选择"><datalist id="pickupList"></datalist></label>
+            <label><span>箱型</span><select name="leaseContainerSize"><option value="40">40尺</option><option value="20">20尺</option></select></label>
+            <button type="submit">查询租箱价</button>
+          </form>
+          <div id="leaseResult" class="result"><p class="empty">选择还箱口岸、提箱地和箱型后查询。</p></div>
+        </article>
+      </section>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
