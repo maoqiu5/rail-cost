@@ -8,6 +8,8 @@ const app = readFileSync(join(root, "web", "app.js"), "utf8");
 const i18n = readFileSync(join(root, "web", "i18n.js"), "utf8");
 
 assert.match(html, /data-bh-header-locale/);
+assert.match(html, /data-bh-header-locale='\{\{placeholder "http\.request\.header\.X-BrianHub-Locale"\}\}'/);
+assert.equal(html.includes('{{placeholder \\"'), false, "Caddy template placeholders must not contain escaped quotes");
 assert.match(html, /id="localeSwitch"/);
 assert.match(html, /data-locale="zh-CN"/);
 assert.match(html, /data-locale="en-US"/);

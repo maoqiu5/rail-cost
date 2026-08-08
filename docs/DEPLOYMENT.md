@@ -26,7 +26,7 @@ Public traffic is served by `brianhub-gateway`; this project must not bind publi
 The `/rail-cost/*` route must enable Caddy `templates` so `web/index.html` can read the first request's `X-BrianHub-Locale` header through:
 
 ```html
-data-bh-header-locale="{{placeholder \"http.request.header.X-BrianHub-Locale\"}}"
+data-bh-header-locale='{{placeholder "http.request.header.X-BrianHub-Locale"}}'
 ```
 
 After changing the gateway, run Caddy validate and reload.
