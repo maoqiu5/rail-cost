@@ -1,54 +1,60 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en-US" data-bh-header-locale="{{placeholder \"http.request.header.X-BrianHub-Locale\"}}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>境外段成本查询</title>
+    <title>Rail Cost Desk</title>
     <link rel="stylesheet" href="./styles.css">
   </head>
   <body>
     <main class="page">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Rail Cost Desk</p>
-          <h1>境外段成本查询</h1>
+          <p class="eyebrow" data-i18n="app.eyebrow">Rail Cost Desk</p>
+          <h1 data-i18n="app.title">Rail Cost Desk</h1>
         </div>
-        <nav class="downloads" aria-label="原始报价单下载">
-          <a href="./data/TOP客户-全铁公共报价单2026.08.01.pdf" download>公共报价单</a>
-          <a href="./data/箱使费2026.08.01-2026.08.31pdf.pdf" download>箱使费</a>
-        </nav>
+        <div class="top-actions">
+          <div id="localeSwitch" class="locale-switch" aria-label="Language">
+            <button type="button" data-locale="zh-CN" data-i18n="locale.zh">中文</button>
+            <button type="button" data-locale="en-US" data-i18n="locale.en">English</button>
+          </div>
+          <nav class="downloads" aria-label="Original PDF downloads" data-i18n-aria-label="downloads.label">
+            <a href="./data/TOP客户-全铁公共报价单2026.08.01.pdf" download data-i18n="downloads.publicQuote">Public quote PDF</a>
+            <a href="./data/箱使费2026.08.01-2026.08.31pdf.pdf" download data-i18n="downloads.leaseFee">Container lease fee PDF</a>
+          </nav>
+        </div>
       </header>
 
       <section class="grid">
         <article class="panel">
           <div class="panel-heading">
-            <h2>境外段运价成本</h2>
-            <p>满洲里按 8 月公共表价调整，二连按指定固定成本。</p>
+            <h2 data-i18n="rail.title">Overseas rail cost</h2>
+            <p data-i18n="rail.description">Manzhouli follows August public quote adjustments; Erlian uses configured fixed costs.</p>
           </div>
           <form id="railForm" class="form">
-            <label><span>换装口岸</span><select name="border"><option value="满洲里">满洲里</option><option value="二连">二连</option></select></label>
-            <label class="autocomplete"><span>目的站</span><input id="railDestination" autocomplete="off" placeholder="输入中文、英文或点击选择"><div id="railDestinationOptions" class="autocomplete-options" role="listbox" hidden></div></label>
+            <label><span data-i18n="rail.border">Transshipment border</span><select name="border"><option value="满洲里" data-i18n="border.manzhouli">Manzhouli</option><option value="二连" data-i18n="border.erlian">Erlian</option></select></label>
+            <label class="autocomplete"><span data-i18n="rail.destination">Destination station</span><input id="railDestination" autocomplete="off" placeholder="Type Chinese, English, station code, or click to choose" data-i18n-placeholder="rail.destination.placeholder"><div id="railDestinationOptions" class="autocomplete-options" role="listbox" hidden></div></label>
             <div class="row">
-              <label><span>箱型</span><select name="containerSize"><option value="40">40尺</option><option value="20">20尺</option></select></label>
-              <label><span>运输类型</span><select name="ownership"><option value="SOC">SOC</option><option value="COC">COC</option></select></label>
+              <label><span data-i18n="rail.containerSize">Container size</span><select name="containerSize"><option value="40" data-i18n="container.40">40 ft</option><option value="20" data-i18n="container.20">20 ft</option></select></label>
+              <label><span data-i18n="rail.ownership">Transport type</span><select name="ownership"><option value="SOC">SOC</option><option value="COC">COC</option></select></label>
             </div>
-            <button type="submit">查询成本</button>
+            <button type="submit" data-i18n="rail.submit">Calculate rail cost</button>
           </form>
-          <div id="railResult" class="result"><p class="empty">选择口岸、目的站和箱型后查询。</p></div>
+          <div id="railResult" class="result"><p class="empty" data-i18n="rail.empty">Choose a border, destination station, and container size to calculate.</p></div>
         </article>
 
         <article class="panel">
           <div class="panel-heading">
-            <h2>TC 箱租箱价格</h2>
-            <p>按提箱地表价和口岸规则计算。</p>
+            <h2 data-i18n="lease.title">TC container lease price</h2>
+            <p data-i18n="lease.description">Calculated from pickup table prices and border adjustment rules.</p>
           </div>
           <form id="leaseForm" class="form">
-            <label><span>换装口岸</span><select name="leaseBorder"><option value="满洲里">满洲里</option><option value="二连">二连</option></select></label>
-            <label><span>提箱地</span><input id="pickup" list="pickupList" placeholder="输入中文、英文或下拉选择"><datalist id="pickupList"></datalist></label>
-            <label><span>箱型</span><select name="leaseContainerSize"><option value="40">40尺</option><option value="20">20尺</option></select></label>
-            <button type="submit">查询租箱价</button>
+            <label><span data-i18n="lease.border">Transshipment border</span><select name="leaseBorder"><option value="满洲里" data-i18n="border.manzhouli">Manzhouli</option><option value="二连" data-i18n="border.erlian">Erlian</option></select></label>
+            <label><span data-i18n="lease.pickup">Pickup location</span><input id="pickup" list="pickupList" placeholder="Type Chinese, English, or choose from the list" data-i18n-placeholder="lease.pickup.placeholder"><datalist id="pickupList"></datalist></label>
+            <label><span data-i18n="lease.containerSize">Container size</span><select name="leaseContainerSize"><option value="40" data-i18n="container.40">40 ft</option><option value="20" data-i18n="container.20">20 ft</option></select></label>
+            <button type="submit" data-i18n="lease.submit">Calculate lease price</button>
           </form>
-          <div id="leaseResult" class="result"><p class="empty">选择换装口岸、提箱地和箱型后查询。</p></div>
+          <div id="leaseResult" class="result"><p class="empty" data-i18n="lease.empty">Choose a border, pickup location, and container size to calculate.</p></div>
         </article>
       </section>
     </main>

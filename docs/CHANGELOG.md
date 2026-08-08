@@ -1,10 +1,18 @@
-# Rail Cost 变更记录
+# Rail Cost Changelog
+
+## 2026-08-08
+
+- Added BrianHub bilingual UI support for `zh-CN` and `en-US`.
+- Added `中文 / English` switching with `brianhub_locale` cookie persistence.
+- Added initial locale resolution from injected `X-BrianHub-Locale`, then cookie, then `en-US`.
+- Added i18n regression tests for locale fallback, priority, cookie output, and UI key coverage.
+- Updated deployment documentation for Caddy `templates` injection on `/rail-cost/*`.
 
 ## 2026-08-05
 
-- 新增：创建独立 `rail-cost` 静态项目。
-- 新增：境外段铁路成本查询页面。
-- 新增：TC 箱租箱价格查询页面。
-- 新增：原始公共报价单和箱使费 PDF 下载入口。
-- 文档：补充 BrianHub 新项目必需文档。
-- 验证：新增计算规则测试和 HTML 冒烟测试。
+- Created standalone `rail-cost` static project.
+- Added overseas rail cost query page.
+- Added TC container lease price query page.
+- Added original public quote and container lease fee PDF download entries.
+- Added BrianHub new-project documentation.
+- Added calculator tests and HTML smoke tests.

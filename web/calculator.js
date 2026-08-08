@@ -61,18 +61,18 @@ export function findRailDestinationFromInput(query) {
 
 export function calculateRailCost({ border, destinationCode, containerSize, ownership }) {
   const destination = findRailDestination(destinationCode);
-  if (!destination) return unavailable("未找到目的站");
+  if (!destination) return unavailable("error.rail.destinationNotFound");
 
   if (border === "二连") {
-    if (containerSize === "20") return unavailable("二连口岸暂不提供 20 尺成本");
+    if (containerSize === "20") return unavailable("error.rail.erlianNo20");
     const fixedCost = ERLIAN_FIXED_COSTS_40.get(destination.stationCode);
-    if (!fixedCost) return unavailable("二连口岸该目的站暂无成本规则");
-    return result({ border, destination, containerSize, ownership, baseUsd: fixedCost, adjustmentUsd: 0, totalUsd: fixedCost, rule: "二连 40 尺固定成本，SOC/COC 同价" });
+    if (!fixedCost) return unavailable("error.rail.erlianNoRule");
+    return result({ border, destination, containerSize, ownership, baseUsd: fixedCost, adjustmentUsd: 0, totalUsd: fixedCost, ruleKey: "rule.rail.erlianFixed40" });
   }
 
   if (border === "满洲里") {
     const baseUsd = destination.manzhouliPublic[containerSize];
-    if (!baseUsd) return unavailable("满洲里口岸该箱型暂无表价");
+    if (!baseUsd) return unavailable("error.rail.manzhouliNoQuote");
     const adjustmentUsd = containerSize === "40" ? (ownership === "SOC" ? -230 : -200) : 0;
     return result({
       border,
@@ -82,11 +82,12 @@ export function calculateRailCost({ border, destinationCode, containerSize, owne
       baseUsd,
       adjustmentUsd,
       totalUsd: baseUsd + adjustmentUsd,
-      rule: containerSize === "40" ? `满洲里 40 尺 ${ownership} 按公共表价 ${adjustmentUsd} USD` : "满洲里 20 尺按公共表价",
+      ruleKey: containerSize === "40" ? "rule.rail.manzhouli40" : "rule.rail.manzhouli20",
+      ruleParams: { ownership, adjustment: adjustmentUsd },
     });
   }
 
-  return unavailable("未知换装口岸");
+  return unavailable("error.rail.unknownBorder");
 }
 
 export function getAvailableLeasePickups(border, containerSize) {
@@ -95,33 +96,33 @@ export function getAvailableLeasePickups(border, containerSize) {
 
 export function calculateLeaseCost({ border, pickupCode, containerSize }) {
   const pickup = LEASE_PICKUPS.find((item) => item.code === pickupCode);
-  if (!pickup) return unavailable("未找到提箱地");
+  if (!pickup) return unavailable("error.lease.pickupNotFound");
   const tablePrice = pickup.table[containerSize];
-  if (tablePrice === null || tablePrice === undefined) return unavailable("该提箱地无表价");
+  if (tablePrice === null || tablePrice === undefined) return unavailable("error.lease.noTablePrice");
 
   if (border === "满洲里") {
-    if (containerSize === "20") return leaseResult(border, pickup, containerSize, tablePrice, -100, "满洲里 20 尺按表价减 100 USD");
-    if (pickup.code === "TAICANG") return leaseResult(border, pickup, containerSize, tablePrice, 1950 - tablePrice, "满洲里 40 尺太仓提固定 1950 USD");
-    return leaseResult(border, pickup, containerSize, tablePrice, pickup.code === "XINGANG" ? -150 : -350, "满洲里 40 尺按提箱地规则调整");
+    if (containerSize === "20") return leaseResult(border, pickup, containerSize, tablePrice, -100, "rule.lease.manzhouli20");
+    if (pickup.code === "TAICANG") return leaseResult(border, pickup, containerSize, tablePrice, 1950 - tablePrice, "rule.lease.manzhouli40Taicang");
+    return leaseResult(border, pickup, containerSize, tablePrice, pickup.code === "XINGANG" ? -150 : -350, "rule.lease.manzhouli40Other");
   }
 
   if (border === "二连") {
-    if (containerSize === "20") return unavailable("二连口岸暂不提供 20 尺租箱价");
-    if (pickup.code === "TAICANG") return leaseResult(border, pickup, containerSize, tablePrice, 1930 - tablePrice, "二连 40 尺太仓提固定 1930 USD");
-    return leaseResult(border, pickup, containerSize, tablePrice, -150, "二连 40 尺其他提箱地按表价减 150 USD");
+    if (containerSize === "20") return unavailable("error.lease.erlianNo20");
+    if (pickup.code === "TAICANG") return leaseResult(border, pickup, containerSize, tablePrice, 1930 - tablePrice, "rule.lease.erlian40Taicang");
+    return leaseResult(border, pickup, containerSize, tablePrice, -150, "rule.lease.erlian40Other");
   }
 
-  return unavailable("未知还箱口岸");
+  return unavailable("error.lease.unknownBorder");
 }
 
-function leaseResult(border, pickup, containerSize, tableUsd, adjustmentUsd, rule) {
-  return { available: true, border, pickup, containerSize, tableUsd, adjustmentUsd, totalUsd: tableUsd + adjustmentUsd, rule };
+function leaseResult(border, pickup, containerSize, tableUsd, adjustmentUsd, ruleKey) {
+  return { available: true, border, pickup, containerSize, tableUsd, adjustmentUsd, totalUsd: tableUsd + adjustmentUsd, ruleKey };
 }
 
 function result(payload) {
   return { available: true, ...payload };
 }
 
-function unavailable(reason) {
-  return { available: false, reason };
+function unavailable(reasonKey) {
+  return { available: false, reasonKey };
 }

@@ -1,51 +1,55 @@
 # Rail Cost PRD
 
-## 项目目标
+## Project Goal
 
-提供一个独立、轻量的内部页面，用于查询境外段铁路成本和 TC 箱租箱价格。
+Provide a standalone lightweight internal page for overseas rail cost lookup and TC container lease price lookup.
 
-## 用户和场景
+## Users and Scenarios
 
-- 使用者：内部报价和操作人员。
-- 场景：根据换装口岸、目的站、站编、箱型、SOC/COC 快速核算境外段成本；根据还箱口岸、提箱地和箱型查询 TC 租箱价。
+- Users: internal quotation and operations staff.
+- Scenario: calculate overseas rail cost by transshipment border, destination station, container size, and SOC/COC; calculate TC lease price by transshipment border, pickup location, and container size.
 
-## 已实现功能
+## Implemented Features
 
-- 境外段运价成本查询。
-- TC 箱租箱价格查询。
-- 原始公共报价单和箱使费 PDF 下载按钮。
-- 目的站支持中文、英文和站编提示。
+- Overseas rail cost query.
+- TC container lease price query.
+- Download buttons for the original public quote PDF and container lease fee PDF.
+- Destination station supports Chinese, English, and station-code search in one input.
+- BrianHub bilingual UI support for `zh-CN` and `en-US`.
 
-## 明确不做
+## BrianHub Locale Rules
 
-- 不接入 `rates` 项目侧边栏。
-- 不包含卡车运价、铁路预测、市场参考、GPS 轨迹或地图功能。
-- 不生成正式客户报价单。
-- 不做数据库、账号、AI 或后台管理。
+- Supported locales: `zh-CN`, `en-US`.
+- Initial priority: `X-BrianHub-Locale`, then `brianhub_locale` cookie, then `en-US`.
+- Unknown locale values fall back to `en-US`.
+- Manual language switching updates the current page immediately and writes `brianhub_locale` for BrianHub-wide reuse.
+- Only UI copy is translated. Business data, user input, PDFs, document body text, and generated/AI output are not automatically translated.
 
-## 关键数据来源
+## Explicit Non-Goals
+
+- Do not integrate into the `rates` project sidebar or codebase.
+- Do not include truck freight, rail prediction, market reference, GPS tracking, or map features.
+- Do not generate formal customer quotations.
+- Do not add database, account, AI, or admin management features.
+
+## Data Sources
 
 - `TOP客户-全铁公共报价单2026.08.01.pdf`
 - `箱使费2026.08.01-2026.08.31pdf.pdf`
-- 已确认的人工成本规则。
+- Confirmed manual cost rules encoded in `web/calculator.js`.
 
-## 数据存储位置
+## Storage
 
-- 前端源码：`web/`
-- 私有 PDF 数据：`web/data/`
+- Frontend source: `web/`
+- Private PDF data: `web/data/`
 
-## 页面
+## Entry Points
 
-- 线上入口：`https://brianhub.net/rail-cost/`
-- 本地入口：直接打开 `web/index.html` 或用静态服务器访问 `web/`。
+- Production: `https://brianhub.net/rail-cost/`
+- Local: open `web/index.html` or serve `web/` with a static file server.
 
-## 当前限制和风险
+## Current Limits and Risks
 
-- 目前只覆盖已录入的 2026 年 8 月规则。
-- `web/data/` 中的原始 PDF 为敏感业务资料，不进入 GitHub 或公共仓库。
-- 如后续每月更新报价，需要同步更新计算规则和原始 PDF。
-
-## 下一步
-
-- 上线后根据业务反馈补充目的站和提箱地。
-- 如规则继续增加，再把规则数据拆成 JSON，计算逻辑保持稳定。
+- Covers only the currently entered 2026-08 rules.
+- Files under `web/data/` are sensitive business materials and must not enter GitHub or a public repository.
+- Monthly quote updates require updating both rules and source PDFs.
