@@ -102,7 +102,7 @@ export function calculateLeaseCost({ border, pickupCode, containerSize }) {
 
   if (border === "满洲里") {
     if (containerSize === "20") return leaseResult(border, pickup, containerSize, tablePrice, -100, "rule.lease.manzhouli20");
-    if (pickup.code === "TAICANG") return leaseResult(border, pickup, containerSize, tablePrice, 1950 - tablePrice, "rule.lease.manzhouli40Taicang");
+    if (pickup.code === "TAICANG") return leaseResult(border, pickup, containerSize, tablePrice, 1900 - tablePrice, "rule.lease.manzhouli40Taicang");
     return leaseResult(border, pickup, containerSize, tablePrice, pickup.code === "XINGANG" ? -150 : -350, "rule.lease.manzhouli40Other");
   }
 

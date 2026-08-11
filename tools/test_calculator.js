@@ -89,8 +89,8 @@ assert.equal(
     pickupCode: "TAICANG",
     containerSize: "40",
   }).totalUsd,
-  1950,
-  "Manzhouli 40 Taicang lease should be fixed at 1950",
+  1900,
+  "Manzhouli 40 Taicang lease should be fixed at 1900",
 );
 
 assert.equal(
