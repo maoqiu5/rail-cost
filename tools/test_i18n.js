@@ -55,5 +55,24 @@ assert.equal(t("zh-CN", "app.title"), "境外段成本查询");
 assert.equal(t("en-US", "rail.submit"), "Calculate rail cost");
 assert.equal(t("zh-CN", "rail.submit"), "查询成本");
 assert.equal(t("fr-FR", "rail.submit"), "Calculate rail cost");
+assert.equal(t("en-US", "nav.admin"), "Data Maintenance");
+assert.equal(t("zh-CN", "nav.admin"), "数据维护");
+
+for (const key of [
+  "admin.title",
+  "admin.empty",
+  "admin.actions",
+  "admin.save",
+  "admin.delete",
+  "admin.new",
+  "admin.error.load",
+  "admin.error.save",
+  "admin.error.delete",
+  "admin.resources.leaseRules",
+  "admin.fields.fixedUsd",
+]) {
+  assert.equal(typeof TRANSLATIONS["en-US"][key], "string", `en-US missing admin key: ${key}`);
+  assert.equal(typeof TRANSLATIONS["zh-CN"][key], "string", `zh-CN missing admin key: ${key}`);
+}
 
 console.log("i18n tests passed");

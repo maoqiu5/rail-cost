@@ -16,6 +16,8 @@ Provide a standalone lightweight internal page for overseas rail cost lookup and
 - Download buttons for the original public quote PDF and container lease fee PDF.
 - Destination station supports Chinese, English, and station-code search in one input.
 - BrianHub bilingual UI support for `zh-CN` and `en-US`.
+- Dedicated SQLite-backed rail-cost data store.
+- Admin-only data maintenance area for creating, reading, updating, and deleting rail-cost tables.
 
 ## BrianHub Locale Rules
 
@@ -30,26 +32,30 @@ Provide a standalone lightweight internal page for overseas rail cost lookup and
 - Do not integrate into the `rates` project sidebar or codebase.
 - Do not include truck freight, rail prediction, market reference, GPS tracking, or map features.
 - Do not generate formal customer quotations.
-- Do not add database, account, AI, or admin management features.
+- Do not implement local rail-cost accounts; BrianHub authentication and forwarded role headers remain the authority.
+- Do not add AI or document-body translation features.
 
 ## Data Sources
 
 - `TOP客户-全铁公共报价单2026.08.01.pdf`
 - `箱使费2026.08.01-2026.08.31pdf.pdf`
-- Confirmed manual cost rules encoded in `web/calculator.js`.
+- Confirmed manual cost rules seeded into the dedicated rail-cost SQLite database.
 
 ## Storage
 
 - Frontend source: `web/`
+- Backend source: `server/`
+- Runtime database: `data/rail-cost.db` locally and `/root/apps/rail-cost/data/rail-cost.db` on VPS.
 - Private PDF data: `web/data/`
 
 ## Entry Points
 
 - Production: `https://brianhub.net/rail-cost/`
-- Local: open `web/index.html` or serve `web/` with a static file server.
+- Local: run the Node service with `npm start`, then open `http://127.0.0.1:8036/rail-cost/`.
 
 ## Current Limits and Risks
 
 - Covers only the currently entered 2026-08 rules.
 - Files under `web/data/` are sensitive business materials and must not enter GitHub or a public repository.
-- Monthly quote updates require updating both rules and source PDFs.
+- Database files are runtime state and must not enter GitHub.
+- Monthly quote updates should be made through the admin maintenance page and source PDFs should be updated separately.

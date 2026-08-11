@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node tools/test_i18n.js && node tools/test_calculator.js && node tools/test_html_smoke.js",
-    "serve": "npx --yes http-server web -p 8791 -c-1"
+    "test": "node --disable-warning=ExperimentalWarning tools/test_db.js && node --disable-warning=ExperimentalWarning tools/test_api.js && node tools/test_i18n.js && node --disable-warning=ExperimentalWarning tools/test_calculator.js && node tools/test_html_smoke.js",
+    "start": "node --disable-warning=ExperimentalWarning server/app.js",
+    "serve": "node --disable-warning=ExperimentalWarning server/app.js"
   }
 }

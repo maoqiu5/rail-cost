@@ -1,10 +1,10 @@
 import {
-  RAIL_DESTINATIONS,
-  LEASE_PICKUPS,
   calculateRailCost,
   calculateLeaseCost,
   findRailDestinationFromInput,
+  getAvailableLeasePickups,
 } from "./calculator.js";
+import { initAdminModule } from "./admin.js";
 import { localeCookieString, resolveInitialLocale, t } from "./i18n.js";
 
 const railDestinationInput = document.querySelector("#railDestination");
@@ -15,13 +15,19 @@ const railResult = document.querySelector("#railResult");
 const leaseResult = document.querySelector("#leaseResult");
 const pickupInput = document.querySelector("#pickup");
 const localeSwitch = document.querySelector("#localeSwitch");
+const railNav = document.querySelector("#railNav");
+const adminNav = document.querySelector("#adminNav");
+const queryView = document.querySelector("#queryView");
+const adminView = document.querySelector("#adminView");
 
 let currentLocale = resolveInitialLocale({
   headerLocale: document.documentElement.dataset.bhHeaderLocale,
   cookieString: document.cookie,
 });
+let catalog = emptyCatalog();
 let lastRailData = null;
 let lastLeaseData = null;
+let adminModule = null;
 
 function optionLabel(item) {
   return `${item.nameCn} / ${item.nameEn} / ${item.stationCode}`;
@@ -31,22 +37,34 @@ function pickupLabel(item) {
   return `${item.nameCn} / ${item.nameEn}`;
 }
 
+function displayName(item) {
+  return currentLocale === "zh-CN" ? item.nameCn : item.nameEn;
+}
+
+function renderBorderSelects() {
+  document.querySelectorAll("[data-border-select]").forEach((select) => {
+    const selected = select.value;
+    select.innerHTML = catalog.borders.map((item) => `<option value="${escapeHtml(item.code)}">${escapeHtml(displayName(item))}</option>`).join("");
+    if (selected) select.value = selected;
+  });
+}
+
 function renderPickupList() {
-  document.querySelector("#pickupList").innerHTML = LEASE_PICKUPS.map((item) => `<option value="${pickupLabel(item)}">${item.code}</option>`).join("");
+  document.querySelector("#pickupList").innerHTML = catalog.leasePickups.map((item) => `<option value="${escapeHtml(pickupLabel(item))}">${escapeHtml(item.code)}</option>`).join("");
 }
 
 function resolveDestination() {
-  return findRailDestinationFromInput(railDestinationInput.value);
+  return findRailDestinationFromInput(railDestinationInput.value, catalog);
 }
 
 function matchingDestinations(query) {
   const typed = query.trim().toLowerCase();
-  if (!typed) return RAIL_DESTINATIONS;
-  return RAIL_DESTINATIONS.filter((item) => [item.nameCn, item.nameEn, item.stationCode, optionLabel(item)].some((value) => String(value).toLowerCase().includes(typed)));
+  if (!typed) return catalog.destinations;
+  return catalog.destinations.filter((item) => [item.nameCn, item.nameEn, item.stationCode, optionLabel(item)].some((value) => String(value).toLowerCase().includes(typed)));
 }
 
 function renderDestinationOptions(items) {
-  railDestinationOptions.innerHTML = items.map((item) => `<button type="button" class="autocomplete-option" role="option" data-station-code="${item.stationCode}">${optionLabel(item)}</button>`).join("");
+  railDestinationOptions.innerHTML = items.map((item) => `<button type="button" class="autocomplete-option" role="option" data-station-code="${escapeHtml(item.stationCode)}">${escapeHtml(optionLabel(item))}</button>`).join("");
 }
 
 function showDestinationOptions({ filter }) {
@@ -60,7 +78,7 @@ function hideDestinationOptions() {
 
 function resolvePickup() {
   const typed = pickupInput.value.trim().toLowerCase();
-  return LEASE_PICKUPS.find((item) => [item.code, item.nameCn, item.nameEn, pickupLabel(item)].some((value) => String(value).toLowerCase() === typed));
+  return catalog.leasePickups.find((item) => [item.code, item.nameCn, item.nameEn, pickupLabel(item)].some((value) => String(value).toLowerCase() === typed));
 }
 
 function renderStaticText() {
@@ -80,6 +98,8 @@ function renderStaticText() {
     button.classList.toggle("active", active);
     button.setAttribute("aria-pressed", String(active));
   });
+  renderBorderSelects();
+  adminModule?.renderLocale();
 }
 
 function renderEmptyResults() {
@@ -94,6 +114,17 @@ function setLocale(locale, { persist }) {
   renderEmptyResults();
   if (lastRailData) renderRail(lastRailData);
   if (lastLeaseData) renderLease(lastLeaseData);
+}
+
+function showView(view) {
+  const adminSelected = view === "admin";
+  queryView.hidden = adminSelected;
+  adminView.hidden = !adminSelected;
+  railNav.classList.toggle("active", !adminSelected);
+  adminNav.classList.toggle("active", adminSelected);
+  railNav.setAttribute("aria-current", adminSelected ? "false" : "page");
+  adminNav.setAttribute("aria-current", adminSelected ? "page" : "false");
+  if (adminSelected) adminModule?.load();
 }
 
 railDestinationInput.addEventListener("focus", () => {
@@ -115,7 +146,7 @@ railDestinationInput.addEventListener("keydown", (event) => {
 railDestinationOptions.addEventListener("click", (event) => {
   const option = event.target.closest(".autocomplete-option");
   if (!option) return;
-  const destination = RAIL_DESTINATIONS.find((item) => item.stationCode === option.dataset.stationCode);
+  const destination = catalog.destinations.find((item) => item.stationCode === option.dataset.stationCode);
   if (!destination) return;
   railDestinationInput.value = optionLabel(destination);
   hideDestinationOptions();
@@ -132,26 +163,35 @@ localeSwitch.addEventListener("click", (event) => {
   setLocale(button.dataset.locale, { persist: true });
 });
 
+railNav.addEventListener("click", () => showView("query"));
+adminNav.addEventListener("click", () => showView("admin"));
+
 railForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const form = new FormData(railForm);
-  lastRailData = calculateRailCost({
-    border: form.get("border"),
-    destinationCode: resolveDestination()?.stationCode,
-    containerSize: form.get("containerSize"),
-    ownership: form.get("ownership"),
-  });
+  lastRailData = calculateRailCost(
+    {
+      border: form.get("border"),
+      destinationCode: resolveDestination()?.stationCode,
+      containerSize: form.get("containerSize"),
+      ownership: form.get("ownership"),
+    },
+    catalog,
+  );
   renderRail(lastRailData);
 });
 
 leaseForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const form = new FormData(leaseForm);
-  lastLeaseData = calculateLeaseCost({
-    border: form.get("leaseBorder"),
-    pickupCode: resolvePickup()?.code,
-    containerSize: form.get("leaseContainerSize"),
-  });
+  lastLeaseData = calculateLeaseCost(
+    {
+      border: form.get("leaseBorder"),
+      pickupCode: resolvePickup()?.code,
+      containerSize: form.get("leaseContainerSize"),
+    },
+    catalog,
+  );
   renderLease(lastLeaseData);
 });
 
@@ -161,7 +201,7 @@ function renderRail(data) {
     return;
   }
   railResult.innerHTML = `
-    <div class="metric"><span>${t(currentLocale, "rail.result.destination")}</span><strong>${optionLabel(data.destination)}</strong></div>
+    <div class="metric"><span>${t(currentLocale, "rail.result.destination")}</span><strong>${escapeHtml(optionLabel(data.destination))}</strong></div>
     <div class="metric"><span>${t(currentLocale, "rail.result.base")}</span><strong>$${usd(data.baseUsd)}</strong></div>
     <div class="metric"><span>${t(currentLocale, "rail.result.adjustment")}</span><strong>${signed(data.adjustmentUsd)}</strong></div>
     <div class="total"><span>${t(currentLocale, "rail.result.total")}</span><strong>$${usd(data.totalUsd)}</strong></div>
@@ -174,7 +214,7 @@ function renderLease(data) {
     return;
   }
   leaseResult.innerHTML = `
-    <div class="metric"><span>${t(currentLocale, "lease.result.pickup")}</span><strong>${pickupLabel(data.pickup)}</strong></div>
+    <div class="metric"><span>${t(currentLocale, "lease.result.pickup")}</span><strong>${escapeHtml(pickupLabel(data.pickup))}</strong></div>
     <div class="metric"><span>${t(currentLocale, "lease.result.table")}</span><strong>$${usd(data.tableUsd)}</strong></div>
     <div class="metric"><span>${t(currentLocale, "lease.result.adjustment")}</span><strong>${signed(data.adjustmentUsd)}</strong></div>
     <div class="total"><span>${t(currentLocale, "lease.result.total")}</span><strong>$${usd(data.totalUsd)}</strong></div>
@@ -189,5 +229,66 @@ function signed(value) {
   return `${value > 0 ? "+" : ""}$${usd(value)}`;
 }
 
-renderPickupList();
-setLocale(currentLocale, { persist: false });
+async function fetchJson(path, options) {
+  const response = await fetch(path, options);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
+}
+
+async function loadCatalog() {
+  catalog = await fetch("./api/query/bootstrap");
+  if (!catalog.ok) throw new Error(`HTTP ${catalog.status}`);
+  catalog = await catalog.json();
+  renderBorderSelects();
+  renderPickupList();
+}
+
+async function init() {
+  const me = await fetch("./api/me")
+    .then((response) => (response.ok ? response.json() : { isAdmin: false }))
+    .catch(() => ({ isAdmin: false }));
+
+  adminNav.hidden = !me.isAdmin;
+  await loadCatalog().catch(() => {
+    railResult.innerHTML = `<p class="empty">${t(currentLocale, "app.loadError")}</p>`;
+    leaseResult.innerHTML = `<p class="empty">${t(currentLocale, "app.loadError")}</p>`;
+  });
+
+  adminModule = initAdminModule({
+    nav: document.querySelector("#adminResourceNav"),
+    table: document.querySelector("#adminTable"),
+    form: document.querySelector("#adminForm"),
+    title: document.querySelector("#adminResourceTitle"),
+    status: document.querySelector("#adminStatus"),
+    newButton: document.querySelector("#adminNew"),
+    t: (key) => t(currentLocale, key),
+    fetchJson,
+    onDataChanged: loadCatalog,
+  });
+
+  renderStaticText();
+  renderEmptyResults();
+  showView("query");
+}
+
+function emptyCatalog() {
+  return {
+    borders: [],
+    destinations: [],
+    railPublicQuotes: [],
+    railRules: [],
+    leasePickups: [],
+    leaseTablePrices: [],
+    leaseRules: [],
+  };
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+init();

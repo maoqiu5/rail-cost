@@ -1,122 +1,135 @@
-export const RAIL_DESTINATIONS = [
-  { nameCn: "沃尔西诺", nameEn: "Vorsino", stationCode: "183502", manzhouliPublic: { "20": 1767, "40": 4100 } },
-  { nameCn: "谢利亚基诺", nameEn: "Selyatino", stationCode: "181102", manzhouliPublic: { "20": 1767, "40": 4100 } },
-  { nameCn: "科利亚季奇", nameEn: "Kolyadichi", stationCode: "144809", manzhouliPublic: { "20": 2190, "40": 4500 } },
-  { nameCn: "沙巴内", nameEn: "Shabany", stationCode: "145201", manzhouliPublic: { "20": 2190, "40": 4500 } },
-  { nameCn: "叶卡捷琳堡", nameEn: "Ekaterinburg-Tovarny", stationCode: "780302", manzhouliPublic: { "20": 1565, "40": 3300 } },
-  { nameCn: "舒沙雷", nameEn: "Shushary-Logistika", stationCode: "033004", manzhouliPublic: { "20": 1830, "40": 4000 } },
-  { nameCn: "克列希哈", nameEn: "Kleshchikha", stationCode: "850204", manzhouliPublic: { "20": 1209, "40": 2900 } },
-];
-
-export const LEASE_PICKUPS = [
-  { code: "SHANGHAI", nameCn: "上海", nameEn: "Shanghai", table: { "20": 400, "40": 2450 } },
-  { code: "NINGBO", nameCn: "宁波", nameEn: "Ningbo", table: { "20": 300, "40": 2500 } },
-  { code: "QINGDAO", nameCn: "青岛", nameEn: "Qingdao", table: { "20": 500, "40": 2100 } },
-  { code: "XINGANG", nameCn: "天津新港", nameEn: "Xingang / Tianjin", table: { "20": 950, "40": 1850 } },
-  { code: "DALIAN", nameCn: "大连", nameEn: "Dalian", table: { "20": 400, "40": 2000 } },
-  { code: "GUANGZHOU", nameCn: "广州", nameEn: "Guangzhou", table: { "20": 550, "40": 2400 } },
-  { code: "SHENZHEN", nameCn: "深圳", nameEn: "Shenzhen", table: { "20": 550, "40": 2500 } },
-  { code: "XIAMEN", nameCn: "厦门", nameEn: "Xiamen", table: { "20": 1000, "40": 2200 } },
-  { code: "ZHENGZHOU", nameCn: "郑州", nameEn: "Zhengzhou", table: { "20": 300, "40": 2200 } },
-  { code: "XIAN", nameCn: "西安", nameEn: "Xi'an", table: { "20": 250, "40": 2100 } },
-  { code: "CHENGDU", nameCn: "成都", nameEn: "Chengdu", table: { "20": 200, "40": 1800 } },
-  { code: "CHONGQING", nameCn: "重庆", nameEn: "Chongqing", table: { "20": 200, "40": 2000 } },
-  { code: "WUHAN", nameCn: "武汉", nameEn: "Wuhan", table: { "20": 300, "40": 2200 } },
-  { code: "HARBIN", nameCn: "哈尔滨", nameEn: "Harbin", table: { "20": 1000, "40": 2300 } },
-  { code: "SHENYANG", nameCn: "沈阳", nameEn: "Shenyang", table: { "20": 400, "40": 2200 } },
-  { code: "SUIFENHE", nameCn: "绥芬河", nameEn: "Suifenhe", table: { "20": 1000, "40": 1450 } },
-  { code: "CHANGSHA", nameCn: "长沙", nameEn: "Changsha", table: { "20": 200, "40": 2200 } },
-  { code: "YIWU", nameCn: "义乌", nameEn: "Yiwu", table: { "20": 1000, "40": 2800 } },
-  { code: "LIANYUNGANG", nameCn: "连云港", nameEn: "Lianyungang", table: { "20": 300, "40": 1400 } },
-  { code: "SHANTOU", nameCn: "汕头", nameEn: "Shantou", table: { "20": null, "40": 2550 } },
-  { code: "TAICANG", nameCn: "太仓", nameEn: "Taicang", table: { "20": 400, "40": 2300 } },
-  { code: "ERLIAN", nameCn: "二连", nameEn: "Erlian", table: { "20": 1000, "40": 2550 } },
-  { code: "CHANGCHUN", nameCn: "长春", nameEn: "Changchun", table: { "20": 1000, "40": 1200 } },
-  { code: "HEFEI", nameCn: "合肥", nameEn: "Hefei", table: { "20": 1000, "40": 2300 } },
-];
-
-const ERLIAN_FIXED_COSTS_40 = new Map([
-  ["181102", 4300],
-  ["183502", 4300],
-  ["144809", 4330],
-]);
-
-export function findRailDestination(query) {
-  const normalized = String(query || "").trim().toLowerCase();
-  return RAIL_DESTINATIONS.find((item) =>
-    [item.nameCn, item.nameEn, item.stationCode].some((value) =>
-      String(value).toLowerCase() === normalized,
-    ),
-  );
+export function findRailDestination(query, catalog) {
+  return findCatalogDestination(query, catalog);
 }
 
-export function findRailDestinationFromInput(query) {
-  const normalized = String(query || "").trim().toLowerCase();
-  return RAIL_DESTINATIONS.find((item) =>
-    [item.nameCn, item.nameEn, item.stationCode, `${item.nameCn} / ${item.nameEn} / ${item.stationCode}`].some((value) =>
-      String(value).toLowerCase() === normalized,
-    ),
-  );
+export function findRailDestinationFromInput(query, catalog) {
+  return findCatalogDestination(query, catalog, { includeLabel: true });
 }
 
-export function calculateRailCost({ border, destinationCode, containerSize, ownership }) {
-  const destination = findRailDestination(destinationCode);
+export function calculateRailCost({ border, destinationCode, containerSize, ownership }, catalog) {
+  const destination = findCatalogDestination(destinationCode, catalog);
   if (!destination) return unavailable("error.rail.destinationNotFound");
 
-  if (border === "二连") {
-    if (containerSize === "20") return unavailable("error.rail.erlianNo20");
-    const fixedCost = ERLIAN_FIXED_COSTS_40.get(destination.stationCode);
-    if (!fixedCost) return unavailable("error.rail.erlianNoRule");
-    return result({ border, destination, containerSize, ownership, baseUsd: fixedCost, adjustmentUsd: 0, totalUsd: fixedCost, ruleKey: "rule.rail.erlianFixed40" });
-  }
+  const borderRow = findCatalogBorder(border, catalog);
+  if (!borderRow) return unavailable("error.rail.unknownBorder");
 
-  if (border === "满洲里") {
-    const baseUsd = destination.manzhouliPublic[containerSize];
-    if (!baseUsd) return unavailable("error.rail.manzhouliNoQuote");
-    const adjustmentUsd = containerSize === "40" ? (ownership === "SOC" ? -230 : -200) : 0;
+  const rule = bestRule(
+    catalog.railRules.filter(
+      (item) =>
+        item.borderCode === borderRow.code &&
+        item.containerSize === containerSize &&
+        (item.destinationStationCode === destination.stationCode || item.destinationStationCode === "") &&
+        (item.ownership === ownership || item.ownership === "*"),
+    ),
+    "destinationStationCode",
+    destination.stationCode,
+  );
+
+  if (!rule) {
+    return borderRow.code === "ERLIAN" ? unavailable("error.rail.erlianNoRule") : unavailable("error.rail.manzhouliNoQuote");
+  }
+  if (rule.ruleType === "unavailable") return unavailable(rule.ruleKey);
+
+  if (rule.ruleType === "fixed") {
+    const totalUsd = Number(rule.fixedUsd);
     return result({
-      border,
+      border: borderRow.code,
       destination,
       containerSize,
       ownership,
-      baseUsd,
-      adjustmentUsd,
-      totalUsd: baseUsd + adjustmentUsd,
-      ruleKey: containerSize === "40" ? "rule.rail.manzhouli40" : "rule.rail.manzhouli20",
-      ruleParams: { ownership, adjustment: adjustmentUsd },
+      baseUsd: totalUsd,
+      adjustmentUsd: 0,
+      totalUsd,
+      ruleKey: rule.ruleKey,
     });
   }
 
-  return unavailable("error.rail.unknownBorder");
+  const quote = catalog.railPublicQuotes.find(
+    (item) =>
+      item.borderCode === borderRow.code &&
+      item.destinationStationCode === destination.stationCode &&
+      item.containerSize === containerSize,
+  );
+  if (!quote) return unavailable("error.rail.manzhouliNoQuote");
+
+  const adjustmentUsd = Number(rule.adjustmentUsd || 0);
+  return result({
+    border: borderRow.code,
+    destination,
+    containerSize,
+    ownership,
+    baseUsd: Number(quote.quoteUsd),
+    adjustmentUsd,
+    totalUsd: Number(quote.quoteUsd) + adjustmentUsd,
+    ruleKey: rule.ruleKey,
+    ruleParams: { ownership, adjustment: adjustmentUsd },
+  });
 }
 
-export function getAvailableLeasePickups(border, containerSize) {
-  return LEASE_PICKUPS.filter((pickup) => calculateLeaseCost({ border, pickupCode: pickup.code, containerSize }).available);
+export function getAvailableLeasePickups(border, containerSize, catalog) {
+  return catalog.leasePickups.filter((pickup) => calculateLeaseCost({ border, pickupCode: pickup.code, containerSize }, catalog).available);
 }
 
-export function calculateLeaseCost({ border, pickupCode, containerSize }) {
-  const pickup = LEASE_PICKUPS.find((item) => item.code === pickupCode);
+export function calculateLeaseCost({ border, pickupCode, containerSize }, catalog) {
+  const borderRow = findCatalogBorder(border, catalog);
+  if (!borderRow) return unavailable("error.lease.unknownBorder");
+
+  const pickup = catalog.leasePickups.find((item) => item.code === pickupCode);
   if (!pickup) return unavailable("error.lease.pickupNotFound");
-  const tablePrice = pickup.table[containerSize];
-  if (tablePrice === null || tablePrice === undefined) return unavailable("error.lease.noTablePrice");
 
-  if (border === "满洲里") {
-    if (containerSize === "20") return leaseResult(border, pickup, containerSize, tablePrice, -100, "rule.lease.manzhouli20");
-    if (pickup.code === "TAICANG") return leaseResult(border, pickup, containerSize, tablePrice, 1900 - tablePrice, "rule.lease.manzhouli40Taicang");
-    return leaseResult(border, pickup, containerSize, tablePrice, pickup.code === "XINGANG" ? -150 : -350, "rule.lease.manzhouli40Other");
-  }
+  const table = catalog.leaseTablePrices.find((item) => item.pickupCode === pickup.code && item.containerSize === containerSize);
+  if (!table) return unavailable("error.lease.noTablePrice");
 
-  if (border === "二连") {
-    if (containerSize === "20") return unavailable("error.lease.erlianNo20");
-    if (pickup.code === "TAICANG") return leaseResult(border, pickup, containerSize, tablePrice, 1930 - tablePrice, "rule.lease.erlian40Taicang");
-    return leaseResult(border, pickup, containerSize, tablePrice, -150, "rule.lease.erlian40Other");
-  }
+  const rule = bestRule(
+    catalog.leaseRules.filter(
+      (item) =>
+        item.borderCode === borderRow.code &&
+        item.containerSize === containerSize &&
+        (item.pickupCode === pickup.code || item.pickupCode === ""),
+    ),
+    "pickupCode",
+    pickup.code,
+  );
 
-  return unavailable("error.lease.unknownBorder");
+  if (!rule) return unavailable("error.lease.unknownBorder");
+  if (rule.ruleType === "unavailable") return unavailable(rule.ruleKey);
+
+  const tableUsd = Number(table.priceUsd);
+  const totalUsd = rule.ruleType === "fixed" ? Number(rule.fixedUsd) : tableUsd + Number(rule.adjustmentUsd || 0);
+  return {
+    available: true,
+    border: borderRow.code,
+    pickup,
+    containerSize,
+    tableUsd,
+    adjustmentUsd: totalUsd - tableUsd,
+    totalUsd,
+    ruleKey: rule.ruleKey,
+  };
 }
 
-function leaseResult(border, pickup, containerSize, tableUsd, adjustmentUsd, ruleKey) {
-  return { available: true, border, pickup, containerSize, tableUsd, adjustmentUsd, totalUsd: tableUsd + adjustmentUsd, ruleKey };
+function findCatalogDestination(query, catalog, { includeLabel = false } = {}) {
+  const normalized = String(query || "").trim().toLowerCase();
+  return catalog.destinations.find((item) => {
+    const values = [item.nameCn, item.nameEn, item.stationCode];
+    if (includeLabel) values.push(`${item.nameCn} / ${item.nameEn} / ${item.stationCode}`);
+    return values.some((value) => String(value).toLowerCase() === normalized);
+  });
+}
+
+function findCatalogBorder(query, catalog) {
+  const normalized = String(query || "").trim().toLowerCase();
+  return catalog.borders.find((item) => [item.code, item.nameCn, item.nameEn].some((value) => String(value).toLowerCase() === normalized));
+}
+
+function bestRule(rules, specificField, specificValue) {
+  return [...rules]
+    .sort((a, b) => {
+      const priority = Number(b.priority || 0) - Number(a.priority || 0);
+      if (priority !== 0) return priority;
+      return Number(b[specificField] === specificValue) - Number(a[specificField] === specificValue);
+    })
+    [0];
 }
 
 function result(payload) {

@@ -1,19 +1,16 @@
-# Rail Cost 文档入口
+# Rail Cost Docs
 
-Rail Cost 是境外段铁路成本和 TC 箱租箱价格的内部查询页。
+Rail Cost is a standalone BrianHub project for overseas rail cost lookup, TC container lease lookup, source PDF downloads, and admin-only data maintenance.
 
-## 当前文档
+## Documents
 
-- `docs/PRD.md`：产品边界、数据来源和限制。
-- `docs/DEPLOYMENT.md`：线上部署、网关路由、数据目录和回滚。
-- `docs/CHANGELOG.md`：正式变更记录。
+- `docs/PRD.md`: product boundary, supported workflows, data ownership, and non-goals.
+- `docs/DEPLOYMENT.md`: local/VPS deployment, BrianHub gateway route, database file, and release checks.
+- `docs/CHANGELOG.md`: released project changes.
 
-## 跨项目规则
+## Maintenance Rules
 
-- `/root/apps/portal/docs/BRIANHUB_DEVELOPMENT_STANDARD.md`
-- `/root/apps/portal/docs/NEW_PROJECT_DOCUMENTATION_REQUIREMENTS.md`
-- `/root/apps/portal/docs/BRIANHUB_GATEWAY_AND_SSO.md`
-
-## 维护规则
-
-正式业务数据和原始 PDF 放在 `web/data/`，不提交 Git。文档只记录规则边界，不写真实密钥、内部令牌或客户敏感报价细节。
+- This project is independent from `rates`.
+- Business data is stored in the dedicated rail-cost SQLite database.
+- Original PDFs stay in `web/data/` and must not be committed.
+- Database files under `data/` are runtime state and must not be committed.
