@@ -1,6 +1,6 @@
-import { ADMIN_RESOURCES } from "./admin-model.js?v=20260811-rail-admin-sidebar";
+import { ADMIN_RESOURCES } from "./admin-model.js?v=20260811-admin-reference-labels";
 
-export function initAdminModule({ nav, table, form, title, status, newButton, t, fetchJson, onDataChanged }) {
+export function initAdminModule({ nav, table, form, title, status, newButton, t, fetchJson, onDataChanged, getCatalog }) {
   let currentResource = ADMIN_RESOURCES[0];
   let rows = [];
   let editingRow = null;
@@ -113,7 +113,7 @@ export function initAdminModule({ nav, table, form, title, status, newButton, t,
     const id = String(row[currentResource.idField]);
     return `
       <tr>
-        ${fields.map((field) => `<td>${escapeHtml(displayValue(row[field.key], field))}</td>`).join("")}
+        ${fields.map((field) => `<td>${escapeHtml(formatAdminValue(row[field.key], field, getCatalog?.()))}</td>`).join("")}
         <td class="admin-actions">
           <button type="button" data-edit-id="${escapeHtml(id)}">${escapeHtml(t("admin.edit"))}</button>
           <button type="button" data-delete-id="${escapeHtml(id)}">${escapeHtml(t("admin.delete"))}</button>
@@ -132,21 +132,14 @@ export function initAdminModule({ nav, table, form, title, status, newButton, t,
   }
 
   function renderField(field, value) {
-    if (field.readonly && !editingRow) return "";
-    const disabled = field.readonly || (editingRow && field.key === currentResource.idField) ? "disabled" : "";
-    const required = field.required ? "required" : "";
-    if (field.type === "boolean") {
-      return `
-        <label class="checkbox-field">
-          <input type="checkbox" name="${field.key}" ${value === false ? "" : "checked"} ${disabled}>
-          <span>${escapeHtml(t(`admin.fields.${field.key}`))}</span>
-        </label>`;
-    }
-    return `
-      <label>
-        <span>${escapeHtml(t(`admin.fields.${field.key}`))}</span>
-        <input name="${field.key}" type="${field.type === "number" ? "number" : "text"}" value="${escapeHtml(value ?? "")}" ${required} ${disabled}>
-      </label>`;
+    return renderAdminField({
+      field,
+      value,
+      editingRow,
+      currentIdField: currentResource.idField,
+      catalog: getCatalog?.(),
+      t,
+    });
   }
 
   function formPayload() {
@@ -171,9 +164,57 @@ export function initAdminModule({ nav, table, form, title, status, newButton, t,
   return { load, renderLocale };
 }
 
-function displayValue(value, field) {
+export function formatAdminValue(value, field, catalog = {}) {
   if (field.type === "boolean") return value ? "Y" : "N";
+  const related = findReferenceItem(value, field, catalog);
+  if (related) return `${value} / ${related.nameCn} / ${related.nameEn}`;
   return value ?? "";
+}
+
+export function renderAdminField({ field, value, editingRow, currentIdField, catalog = {}, t }) {
+  if (field.readonly && !editingRow) return "";
+  const disabled = field.readonly || (editingRow && field.key === currentIdField) ? "disabled" : "";
+  const required = field.required ? "required" : "";
+  if (field.type === "boolean") {
+    return `
+        <label class="checkbox-field">
+          <input type="checkbox" name="${field.key}" ${value === false ? "" : "checked"} ${disabled}>
+          <span>${escapeHtml(t(`admin.fields.${field.key}`))}</span>
+        </label>`;
+  }
+  if (field.reference) {
+    return `
+      <label>
+        <span>${escapeHtml(t(`admin.fields.${field.key}`))}</span>
+        <select name="${field.key}" ${required} ${disabled}>
+          ${referenceOptions(field, value, catalog)}
+        </select>
+      </label>`;
+  }
+  return `
+      <label>
+        <span>${escapeHtml(t(`admin.fields.${field.key}`))}</span>
+        <input name="${field.key}" type="${field.type === "number" ? "number" : "text"}" value="${escapeHtml(value ?? "")}" ${required} ${disabled}>
+      </label>`;
+}
+
+function referenceOptions(field, value, catalog) {
+  const items = catalog?.[field.reference.collection] || [];
+  const blankOption = field.required ? "" : `<option value="" ${value ? "" : "selected"}></option>`;
+  const options = items.map((item) => {
+    const optionValue = item[field.reference.valueKey];
+    const selected = String(optionValue) === String(value ?? "") ? "selected" : "";
+    return `<option value="${escapeHtml(optionValue)}" ${selected}>${escapeHtml(formatAdminValue(optionValue, field, catalog))}</option>`;
+  });
+  if (value && !items.some((item) => String(item[field.reference.valueKey]) === String(value))) {
+    options.unshift(`<option value="${escapeHtml(value)}" selected>${escapeHtml(value)}</option>`);
+  }
+  return `${blankOption}${options.join("")}`;
+}
+
+function findReferenceItem(value, field, catalog) {
+  if (!field.reference || value === null || value === undefined || value === "") return null;
+  return (catalog?.[field.reference.collection] || []).find((item) => String(item[field.reference.valueKey]) === String(value));
 }
 
 function escapeHtml(value) {

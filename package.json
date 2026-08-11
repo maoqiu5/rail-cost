@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --disable-warning=ExperimentalWarning tools/test_db.js && node --disable-warning=ExperimentalWarning tools/test_api.js && node tools/test_i18n.js && node --disable-warning=ExperimentalWarning tools/test_calculator.js && node tools/test_html_smoke.js",
+    "test": "node --disable-warning=ExperimentalWarning tools/test_db.js && node --disable-warning=ExperimentalWarning tools/test_api.js && node tools/test_i18n.js && node --disable-warning=ExperimentalWarning tools/test_calculator.js && node tools/test_admin_display.js && node tools/test_html_smoke.js",
     "start": "node --disable-warning=ExperimentalWarning server/app.js",
     "serve": "node --disable-warning=ExperimentalWarning server/app.js"
   }

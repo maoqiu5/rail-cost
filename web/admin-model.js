@@ -32,8 +32,8 @@ export const ADMIN_RESOURCES = [
     table: "rail_cost_rail_public_quotes",
     fields: [
       { key: "id", type: "number", readonly: true },
-      { key: "borderCode", type: "text", required: true },
-      { key: "destinationStationCode", type: "text", required: true },
+      { key: "borderCode", type: "text", required: true, reference: { collection: "borders", valueKey: "code" } },
+      { key: "destinationStationCode", type: "text", required: true, reference: { collection: "destinations", valueKey: "stationCode" } },
       { key: "containerSize", type: "text", required: true },
       { key: "quoteUsd", type: "number", required: true },
       { key: "enabled", type: "boolean", required: true },
@@ -46,8 +46,8 @@ export const ADMIN_RESOURCES = [
     table: "rail_cost_rail_rules",
     fields: [
       { key: "id", type: "number", readonly: true },
-      { key: "borderCode", type: "text", required: true },
-      { key: "destinationStationCode", type: "text" },
+      { key: "borderCode", type: "text", required: true, reference: { collection: "borders", valueKey: "code" } },
+      { key: "destinationStationCode", type: "text", reference: { collection: "destinations", valueKey: "stationCode" } },
       { key: "containerSize", type: "text", required: true },
       { key: "ownership", type: "text", required: true },
       { key: "ruleType", type: "text", required: true },
@@ -79,7 +79,7 @@ export const ADMIN_RESOURCES = [
     table: "rail_cost_lease_table_prices",
     fields: [
       { key: "id", type: "number", readonly: true },
-      { key: "pickupCode", type: "text", required: true },
+      { key: "pickupCode", type: "text", required: true, reference: { collection: "leasePickups", valueKey: "code" } },
       { key: "containerSize", type: "text", required: true },
       { key: "priceUsd", type: "number", required: true },
       { key: "enabled", type: "boolean", required: true },
@@ -92,8 +92,8 @@ export const ADMIN_RESOURCES = [
     table: "rail_cost_lease_rules",
     fields: [
       { key: "id", type: "number", readonly: true },
-      { key: "borderCode", type: "text", required: true },
-      { key: "pickupCode", type: "text" },
+      { key: "borderCode", type: "text", required: true, reference: { collection: "borders", valueKey: "code" } },
+      { key: "pickupCode", type: "text", reference: { collection: "leasePickups", valueKey: "code" } },
       { key: "containerSize", type: "text", required: true },
       { key: "ruleType", type: "text", required: true },
       { key: "adjustmentUsd", type: "number" },

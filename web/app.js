@@ -3,9 +3,9 @@ import {
   calculateLeaseCost,
   findRailDestinationFromInput,
   getAvailableLeasePickups,
-} from "./calculator.js?v=20260811-rail-admin-sidebar";
-import { initAdminModule } from "./admin.js?v=20260811-rail-admin-sidebar";
-import { localeCookieString, resolveInitialLocale, t } from "./i18n.js?v=20260811-rail-admin-sidebar";
+} from "./calculator.js?v=20260811-admin-reference-labels";
+import { initAdminModule } from "./admin.js?v=20260811-admin-reference-labels";
+import { localeCookieString, resolveInitialLocale, t } from "./i18n.js?v=20260811-admin-reference-labels";
 
 const railDestinationInput = document.querySelector("#railDestination");
 const railDestinationOptions = document.querySelector("#railDestinationOptions");
@@ -264,6 +264,7 @@ async function init() {
     t: (key) => t(currentLocale, key),
     fetchJson,
     onDataChanged: loadCatalog,
+    getCatalog: () => catalog,
   });
 
   renderStaticText();
