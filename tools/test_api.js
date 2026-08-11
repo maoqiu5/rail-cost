@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
+import { readFileSync } from "node:fs";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createApp } from "../server/app.js";
+
+const serverSource = readFileSync(join(process.cwd(), "server", "app.js"), "utf8");
+assert.match(serverSource, /process\.env\.HOST \|\| "127\.0\.0\.1"/);
+assert.match(serverSource, /server\.listen\(port, host/);
 
 const dir = mkdtempSync(join(tmpdir(), "rail-cost-api-"));
 const server = createServer(createApp({ dbPath: join(dir, "rail-cost.db") }));

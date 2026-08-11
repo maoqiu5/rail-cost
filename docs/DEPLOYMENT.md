@@ -22,7 +22,7 @@ Rail Cost is a small Node.js service using the built-in `node:sqlite` module. Th
 - `GET /api/query/bootstrap`.
 - Admin-only `GET/POST/PUT/DELETE /api/admin/:resource`.
 
-The app binds only to localhost on the VPS, normally `127.0.0.1:8036`. Public `80/443` traffic stays with the BrianHub gateway.
+The app listens on port `8036`. In Docker it must use `HOST=0.0.0.0` so the BrianHub gateway container can reach it over the shared Docker network. Public `80/443` traffic stays with the BrianHub gateway.
 
 ## BrianHub Headers
 
@@ -75,7 +75,7 @@ node tools/test_html_smoke.js
 Then start the service:
 
 ```bash
-PORT=8036 node --disable-warning=ExperimentalWarning server/app.js
+PORT=8036 HOST=127.0.0.1 node --disable-warning=ExperimentalWarning server/app.js
 ```
 
 Open `http://127.0.0.1:8036/rail-cost/`.

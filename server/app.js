@@ -176,8 +176,9 @@ function escapeHtml(value) {
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { createServer } = await import("node:http");
   const port = Number(process.env.PORT || 8036);
+  const host = process.env.HOST || "127.0.0.1";
   const server = createServer(createApp());
-  server.listen(port, "127.0.0.1", () => {
-    console.log(`rail-cost listening on http://127.0.0.1:${port}`);
+  server.listen(port, host, () => {
+    console.log(`rail-cost listening on http://${host}:${port}`);
   });
 }
