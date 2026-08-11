@@ -4,27 +4,27 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Rail Cost Desk</title>
-    <link rel="stylesheet" href="./styles.css?v=20260811-admin-db">
+    <link rel="stylesheet" href="./styles.css?v=20260811-rail-admin-sidebar">
   </head>
   <body>
-    <main class="page">
+    <main class="app-shell">
       <aside class="sidebar" aria-label="Rail Cost navigation">
         <div class="brand">
-          <p class="eyebrow" data-i18n="app.eyebrow">Rail Cost Desk</p>
+          <p class="eyebrow">CIMC WEI TRANS RAIL PRODUCT</p>
           <h1 data-i18n="app.title">Rail Cost Desk</h1>
         </div>
         <nav class="main-nav" aria-label="Sections">
           <button id="railNav" type="button" class="active" data-i18n="nav.query">Query</button>
           <button id="adminNav" type="button" class="admin-view" data-i18n="nav.admin" hidden>Data Maintenance</button>
         </nav>
-        <div id="localeSwitch" class="language-switcher" aria-label="Language">
-          <button type="button" data-locale="zh-CN" data-i18n="locale.zh">中文</button>
-          <button type="button" data-locale="en-US" data-i18n="locale.en">English</button>
-        </div>
       </aside>
 
       <section class="content">
-        <header class="topbar">
+        <header class="content-header">
+          <div id="localeSwitch" class="language-switcher" aria-label="Language">
+            <button type="button" data-locale="zh-CN" data-i18n="locale.zh">中文</button>
+            <button type="button" data-locale="en-US" data-i18n="locale.en">English</button>
+          </div>
           <nav class="downloads" aria-label="Original PDF downloads" data-i18n-aria-label="downloads.label">
             <a href="./data/TOP客户-全铁公共报价单2026.08.01.pdf" download data-i18n="downloads.publicQuote">Public quote PDF</a>
             <a href="./data/箱使费2026.08.01-2026.08.31pdf.pdf" download data-i18n="downloads.leaseFee">Container lease fee PDF</a>
@@ -117,6 +117,6 @@
         </section>
       </section>
     </main>
-    <script type="module" src="./app.js"></script>
+    <script type="module" src="./app.js?v=20260811-rail-admin-sidebar"></script>
   </body>
 </html>

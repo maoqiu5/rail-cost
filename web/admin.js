@@ -1,4 +1,4 @@
-import { ADMIN_RESOURCES } from "./admin-model.js";
+import { ADMIN_RESOURCES } from "./admin-model.js?v=20260811-rail-admin-sidebar";
 
 export function initAdminModule({ nav, table, form, title, status, newButton, t, fetchJson, onDataChanged }) {
   let currentResource = ADMIN_RESOURCES[0];

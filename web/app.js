@@ -3,9 +3,9 @@ import {
   calculateLeaseCost,
   findRailDestinationFromInput,
   getAvailableLeasePickups,
-} from "./calculator.js";
-import { initAdminModule } from "./admin.js";
-import { localeCookieString, resolveInitialLocale, t } from "./i18n.js";
+} from "./calculator.js?v=20260811-rail-admin-sidebar";
+import { initAdminModule } from "./admin.js?v=20260811-rail-admin-sidebar";
+import { localeCookieString, resolveInitialLocale, t } from "./i18n.js?v=20260811-rail-admin-sidebar";
 
 const railDestinationInput = document.querySelector("#railDestination");
 const railDestinationOptions = document.querySelector("#railDestinationOptions");
