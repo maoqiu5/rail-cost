@@ -13,6 +13,27 @@ export function calculateRailCost({ border, destinationCode, containerSize, owne
   const borderRow = findCatalogBorder(border, catalog);
   if (!borderRow) return unavailable("error.rail.unknownBorder");
 
+  const exactQuote = findOwnershipQuote({
+    quotes: catalog.railPublicQuotes,
+    borderCode: borderRow.code,
+    destinationStationCode: destination.stationCode,
+    containerSize,
+    ownership,
+    exactOnly: true,
+  });
+  if (exactQuote) {
+    return result({
+      border: borderRow.code,
+      destination,
+      containerSize,
+      ownership,
+      baseUsd: Number(exactQuote.quoteUsd),
+      adjustmentUsd: 0,
+      totalUsd: Number(exactQuote.quoteUsd),
+      ruleKey: "rule.rail.ownershipQuote",
+    });
+  }
+
   const rule = bestRule(
     catalog.railRules.filter(
       (item) =>
@@ -44,16 +65,13 @@ export function calculateRailCost({ border, destinationCode, containerSize, owne
     });
   }
 
-  const quote = bestOwnershipQuote(
-    catalog.railPublicQuotes.filter(
-      (item) =>
-        item.borderCode === borderRow.code &&
-        item.destinationStationCode === destination.stationCode &&
-        item.containerSize === containerSize &&
-        (item.ownership === ownership || item.ownership === "*" || !item.ownership),
-    ),
+  const quote = findOwnershipQuote({
+    quotes: catalog.railPublicQuotes,
+    borderCode: borderRow.code,
+    destinationStationCode: destination.stationCode,
+    containerSize,
     ownership,
-  );
+  });
   if (!quote) return unavailable("error.rail.manzhouliNoQuote");
 
   const adjustmentUsd = quote.ownership === ownership ? 0 : Number(rule.adjustmentUsd || 0);
@@ -136,8 +154,15 @@ function bestRule(rules, specificField, specificValue) {
     [0];
 }
 
-function bestOwnershipQuote(quotes, ownership) {
-  return [...quotes].sort((a, b) => Number(b.ownership === ownership) - Number(a.ownership === ownership))[0];
+function findOwnershipQuote({ quotes, borderCode, destinationStationCode, containerSize, ownership, exactOnly = false }) {
+  const matches = quotes.filter(
+    (item) =>
+      item.borderCode === borderCode &&
+      item.destinationStationCode === destinationStationCode &&
+      item.containerSize === containerSize &&
+      (exactOnly ? item.ownership === ownership : item.ownership === ownership || item.ownership === "*" || !item.ownership),
+  );
+  return [...matches].sort((a, b) => Number(b.ownership === ownership) - Number(a.ownership === ownership))[0];
 }
 
 function result(payload) {

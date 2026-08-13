@@ -31,6 +31,20 @@ db.prepare("insert into rail_cost_rail_public_quotes (borderCode, destinationSta
   "COC",
   3900,
 );
+db.prepare("insert into rail_cost_rail_public_quotes (borderCode, destinationStationCode, containerSize, ownership, quoteUsd, enabled) values (?, ?, ?, ?, ?, 1)").run(
+  "ERLIAN",
+  "033004",
+  "40",
+  "SOC",
+  4250,
+);
+db.prepare("insert into rail_cost_rail_public_quotes (borderCode, destinationStationCode, containerSize, ownership, quoteUsd, enabled) values (?, ?, ?, ?, ?, 1)").run(
+  "ERLIAN",
+  "033004",
+  "40",
+  "COC",
+  4280,
+);
 const ownershipCatalog = loadQueryData(db);
 
 const vorsino = findRailDestination("Vorsino", catalog);
@@ -63,6 +77,28 @@ assert.equal(
   }, ownershipCatalog).totalUsd,
   3900,
   "Manzhouli 40 COC should use the ownership-specific quote when maintained",
+);
+
+assert.equal(
+  calculateRailCost({
+    border: "ERLIAN",
+    destinationCode: "033004",
+    containerSize: "40",
+    ownership: "SOC",
+  }, ownershipCatalog).totalUsd,
+  4250,
+  "Erlian Shushary 40 SOC should use the maintained ownership-specific quote even without a rail rule",
+);
+
+assert.equal(
+  calculateRailCost({
+    border: "ERLIAN",
+    destinationCode: "033004",
+    containerSize: "40",
+    ownership: "COC",
+  }, ownershipCatalog).totalUsd,
+  4280,
+  "Erlian Shushary 40 COC should use the maintained ownership-specific quote even without a rail rule",
 );
 
 assert.equal(

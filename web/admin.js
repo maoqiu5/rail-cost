@@ -1,4 +1,4 @@
-import { ADMIN_RESOURCES } from "./admin-model.js?v=20260813-rail-ownership-quotes";
+import { ADMIN_RESOURCES } from "./admin-model.js?v=20260813-rail-quote-rule-fallback";
 
 export function initAdminModule({ nav, table, form, title, status, newButton, t, fetchJson, onDataChanged, getCatalog }) {
   let currentResource = ADMIN_RESOURCES[0];
