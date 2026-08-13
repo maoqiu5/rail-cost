@@ -71,6 +71,31 @@ try {
   assert.equal(adminRows.status, 200);
   assert.equal(adminRows.body.rows.some((row) => row.code === "TAICANG"), true);
 
+  const railQuotes = await jsonFetch(`${base}/api/admin/rail-public-quotes`, {
+    headers: { "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
+  });
+  assert.equal(railQuotes.status, 200);
+  assert.equal(railQuotes.body.fields.some((field) => field.key === "ownership"), true);
+
+  const createdRailQuote = await jsonFetch(`${base}/api/admin/rail-public-quotes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-BrianHub-User": "brian",
+      "X-BrianHub-Role": "admin",
+    },
+    body: JSON.stringify({
+      borderCode: "MANZHOULI",
+      destinationStationCode: "183502",
+      containerSize: "40",
+      ownership: "SOC",
+      quoteUsd: 3870,
+      enabled: true,
+    }),
+  });
+  assert.equal(createdRailQuote.status, 201);
+  assert.equal(createdRailQuote.body.row.ownership, "SOC");
+
   const created = await jsonFetch(`${base}/api/admin/lease-pickups`, {
     method: "POST",
     headers: {

@@ -1,4 +1,4 @@
-import { ADMIN_RESOURCES } from "./admin-model.js?v=20260811-admin-reference-labels";
+import { ADMIN_RESOURCES } from "./admin-model.js?v=20260813-rail-ownership-quotes";
 
 export function initAdminModule({ nav, table, form, title, status, newButton, t, fetchJson, onDataChanged, getCatalog }) {
   let currentResource = ADMIN_RESOURCES[0];
@@ -188,6 +188,15 @@ export function renderAdminField({ field, value, editingRow, currentIdField, cat
         <span>${escapeHtml(t(`admin.fields.${field.key}`))}</span>
         <select name="${field.key}" ${required} ${disabled}>
           ${referenceOptions(field, value, catalog)}
+        </select>
+      </label>`;
+  }
+  if (field.options) {
+    return `
+      <label>
+        <span>${escapeHtml(t(`admin.fields.${field.key}`))}</span>
+        <select name="${field.key}" ${required} ${disabled}>
+          ${field.options.map((option) => `<option value="${escapeHtml(option)}" ${String(option) === String(value ?? "") ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}
         </select>
       </label>`;
   }

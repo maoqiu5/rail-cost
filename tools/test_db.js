@@ -44,5 +44,11 @@ assert.equal(
 const adminTables = loadAdminTables(db);
 assert.equal(adminTables["lease-pickups"].rows.some((row) => row.code === "TAICANG"), true);
 assert.equal(adminTables["lease-rules"].fields.some((field) => field.key === "fixedUsd"), true);
+assert.equal(adminTables["rail-public-quotes"].fields.some((field) => field.key === "ownership"), true);
+assert.equal(
+  queryData.railPublicQuotes.every((row) => row.ownership),
+  true,
+  "rail public quotes should expose ownership as a price dimension",
+);
 
 console.log("database tests passed");

@@ -44,15 +44,19 @@ export function calculateRailCost({ border, destinationCode, containerSize, owne
     });
   }
 
-  const quote = catalog.railPublicQuotes.find(
-    (item) =>
-      item.borderCode === borderRow.code &&
-      item.destinationStationCode === destination.stationCode &&
-      item.containerSize === containerSize,
+  const quote = bestOwnershipQuote(
+    catalog.railPublicQuotes.filter(
+      (item) =>
+        item.borderCode === borderRow.code &&
+        item.destinationStationCode === destination.stationCode &&
+        item.containerSize === containerSize &&
+        (item.ownership === ownership || item.ownership === "*" || !item.ownership),
+    ),
+    ownership,
   );
   if (!quote) return unavailable("error.rail.manzhouliNoQuote");
 
-  const adjustmentUsd = Number(rule.adjustmentUsd || 0);
+  const adjustmentUsd = quote.ownership === ownership ? 0 : Number(rule.adjustmentUsd || 0);
   return result({
     border: borderRow.code,
     destination,
@@ -130,6 +134,10 @@ function bestRule(rules, specificField, specificValue) {
       return Number(b[specificField] === specificValue) - Number(a[specificField] === specificValue);
     })
     [0];
+}
+
+function bestOwnershipQuote(quotes, ownership) {
+  return [...quotes].sort((a, b) => Number(b.ownership === ownership) - Number(a.ownership === ownership))[0];
 }
 
 function result(payload) {

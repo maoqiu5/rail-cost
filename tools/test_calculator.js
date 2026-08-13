@@ -17,6 +17,22 @@ ensureSchema(db);
 seedDatabase(db);
 const catalog = loadQueryData(db);
 
+db.prepare("insert into rail_cost_rail_public_quotes (borderCode, destinationStationCode, containerSize, ownership, quoteUsd, enabled) values (?, ?, ?, ?, ?, 1)").run(
+  "MANZHOULI",
+  "183502",
+  "40",
+  "SOC",
+  3870,
+);
+db.prepare("insert into rail_cost_rail_public_quotes (borderCode, destinationStationCode, containerSize, ownership, quoteUsd, enabled) values (?, ?, ?, ?, ?, 1)").run(
+  "MANZHOULI",
+  "183502",
+  "40",
+  "COC",
+  3900,
+);
+const ownershipCatalog = loadQueryData(db);
+
 const vorsino = findRailDestination("Vorsino", catalog);
 assert.equal(vorsino.stationCode, "183502");
 assert.equal(vorsino.nameCn, "沃尔西诺");
@@ -33,9 +49,9 @@ assert.deepEqual(
     destinationCode: "183502",
     containerSize: "40",
     ownership: "SOC",
-  }, catalog).totalUsd,
+  }, ownershipCatalog).totalUsd,
   3870,
-  "Manzhouli 40 SOC should be public quote 4100 - 230",
+  "Manzhouli 40 SOC should use the ownership-specific quote when maintained",
 );
 
 assert.equal(
@@ -44,9 +60,9 @@ assert.equal(
     destinationCode: "183502",
     containerSize: "40",
     ownership: "COC",
-  }, catalog).totalUsd,
+  }, ownershipCatalog).totalUsd,
   3900,
-  "Manzhouli 40 COC should be public quote 4100 - 200",
+  "Manzhouli 40 COC should use the ownership-specific quote when maintained",
 );
 
 assert.equal(

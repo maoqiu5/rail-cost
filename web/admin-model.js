@@ -35,6 +35,7 @@ export const ADMIN_RESOURCES = [
       { key: "borderCode", type: "text", required: true, reference: { collection: "borders", valueKey: "code" } },
       { key: "destinationStationCode", type: "text", required: true, reference: { collection: "destinations", valueKey: "stationCode" } },
       { key: "containerSize", type: "text", required: true },
+      { key: "ownership", type: "text", required: true, options: ["*", "SOC", "COC"] },
       { key: "quoteUsd", type: "number", required: true },
       { key: "enabled", type: "boolean", required: true },
     ],

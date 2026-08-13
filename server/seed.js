@@ -55,6 +55,7 @@ export function buildSeedRows() {
       borderCode: "MANZHOULI",
       destinationStationCode: destination.stationCode,
       containerSize,
+      ownership: "*",
       quoteUsd,
       enabled: true,
     })),

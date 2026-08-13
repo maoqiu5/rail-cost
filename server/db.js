@@ -10,7 +10,7 @@ const INITIAL_SEED_VERSION = "2026-08-11";
 const TABLE_COLUMNS = {
   rail_cost_borders: ["code", "nameCn", "nameEn", "sortOrder", "enabled"],
   rail_cost_destinations: ["stationCode", "nameCn", "nameEn", "sortOrder", "enabled"],
-  rail_cost_rail_public_quotes: ["id", "borderCode", "destinationStationCode", "containerSize", "quoteUsd", "enabled"],
+  rail_cost_rail_public_quotes: ["id", "borderCode", "destinationStationCode", "containerSize", "ownership", "quoteUsd", "enabled"],
   rail_cost_rail_rules: [
     "id",
     "borderCode",
@@ -76,9 +76,10 @@ export function ensureSchema(db) {
       borderCode text not null,
       destinationStationCode text not null,
       containerSize text not null,
+      ownership text not null default '*',
       quoteUsd real not null,
       enabled integer not null default 1,
-      unique (borderCode, destinationStationCode, containerSize)
+      unique (borderCode, destinationStationCode, containerSize, ownership)
     );
 
     create table if not exists rail_cost_rail_rules (
@@ -127,6 +128,7 @@ export function ensureSchema(db) {
       enabled integer not null default 1
     );
   `);
+  migrateSchema(db);
 }
 
 export function seedDatabase(db) {
@@ -151,7 +153,7 @@ export function loadQueryData(db) {
   return {
     borders: selectEnabled(db, "rail_cost_borders", "sortOrder, code"),
     destinations: selectEnabled(db, "rail_cost_destinations", "sortOrder, stationCode"),
-    railPublicQuotes: selectEnabled(db, "rail_cost_rail_public_quotes", "borderCode, destinationStationCode, containerSize"),
+    railPublicQuotes: selectEnabled(db, "rail_cost_rail_public_quotes", "borderCode, destinationStationCode, containerSize, ownership"),
     railRules: selectEnabled(db, "rail_cost_rail_rules", "priority desc, id"),
     leasePickups: selectEnabled(db, "rail_cost_lease_pickups", "sortOrder, code"),
     leaseTablePrices: selectEnabled(db, "rail_cost_lease_table_prices", "pickupCode, containerSize"),
@@ -298,6 +300,45 @@ function validatePayload(resource, row) {
   if (resource.key === "rail-rules" && row.ruleType === "fixed" && row.fixedUsd === null) {
     throw appError("invalid_field", 400, "fixedUsd");
   }
+}
+
+function migrateSchema(db) {
+  const quoteColumns = db.prepare("pragma table_info(rail_cost_rail_public_quotes)").all().map((column) => column.name);
+  if (!quoteColumns.includes("ownership")) {
+    db.exec("alter table rail_cost_rail_public_quotes add column ownership text not null default '*';");
+  }
+  if (hasLegacyRailQuoteUniqueIndex(db)) rebuildRailPublicQuotes(db);
+}
+
+function hasLegacyRailQuoteUniqueIndex(db) {
+  return db
+    .prepare("pragma index_list(rail_cost_rail_public_quotes)")
+    .all()
+    .filter((index) => index.unique)
+    .some((index) => {
+      const columns = db.prepare(`pragma index_info(${index.name})`).all().map((column) => column.name);
+      return columns.join(",") === "borderCode,destinationStationCode,containerSize";
+    });
+}
+
+function rebuildRailPublicQuotes(db) {
+  db.exec(`
+    create table if not exists rail_cost_rail_public_quotes_new (
+      id integer primary key,
+      borderCode text not null,
+      destinationStationCode text not null,
+      containerSize text not null,
+      ownership text not null default '*',
+      quoteUsd real not null,
+      enabled integer not null default 1,
+      unique (borderCode, destinationStationCode, containerSize, ownership)
+    );
+    insert or ignore into rail_cost_rail_public_quotes_new (id, borderCode, destinationStationCode, containerSize, ownership, quoteUsd, enabled)
+      select id, borderCode, destinationStationCode, containerSize, coalesce(nullif(ownership, ''), '*'), quoteUsd, enabled
+      from rail_cost_rail_public_quotes;
+    drop table rail_cost_rail_public_quotes;
+    alter table rail_cost_rail_public_quotes_new rename to rail_cost_rail_public_quotes;
+  `);
 }
 
 function domainRowCount(db) {
