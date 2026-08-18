@@ -150,9 +150,10 @@ export function initAdminModule({ nav, table, form, title, status, newButton, t,
       currentResource.fields
         .filter((field) => !(editingRow && field.key === currentResource.idField) && (!field.readonly || Boolean(editingRow)))
         .map((field) => {
+          const rawValue = data.has(field.key) ? data.get(field.key) : editingRow?.[field.key];
           if (field.type === "boolean") return [field.key, data.has(field.key)];
-          if (field.type === "number") return [field.key, data.get(field.key) === "" ? null : Number(data.get(field.key))];
-          return [field.key, data.get(field.key) || ""];
+          if (field.type === "number") return [field.key, rawValue === "" || rawValue === undefined ? null : Number(rawValue)];
+          return [field.key, rawValue || ""];
         }),
     );
   }
