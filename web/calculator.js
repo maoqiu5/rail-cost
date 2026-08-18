@@ -99,6 +99,14 @@ export function calculateLeaseCost({ border, pickupCode, containerSize }, catalo
   const pickup = catalog.leasePickups.find((item) => item.code === pickupCode);
   if (!pickup) return unavailable("error.lease.pickupNotFound");
 
+  const maintained = (catalog.leasePrices || []).find((item) => item.borderCode === borderRow.code && item.pickupCode === pickup.code && item.containerSize === containerSize);
+  if (maintained) {
+    const tableUsd = Number(maintained.priceUsd);
+    const discountUsd = Number(maintained.discountUsd);
+    const totalUsd = Number(maintained.displayPriceUsd);
+    return { available: true, border: borderRow.code, pickup, containerSize, tableUsd, adjustmentUsd: -discountUsd, totalUsd, ruleKey: "rule.lease.maintained" };
+  }
+
   const table = catalog.leaseTablePrices.find((item) => item.pickupCode === pickup.code && item.containerSize === containerSize);
   if (!table) return unavailable("error.lease.noTablePrice");
 

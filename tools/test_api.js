@@ -71,6 +71,31 @@ try {
   assert.equal(adminRows.status, 200);
   assert.equal(adminRows.body.rows.some((row) => row.code === "TAICANG"), true);
 
+  const leasePrices = await jsonFetch(base + "/api/admin/lease-prices", {
+    headers: { "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
+  });
+  assert.equal(leasePrices.status, 200);
+  const taicangPrice = leasePrices.body.rows.find((row) => row.borderCode === "MANZHOULI" && row.pickupCode === "TAICANG" && row.containerSize === "40");
+  assert.ok(taicangPrice);
+  assert.equal(taicangPrice.displayPriceUsd, 1900);
+  assert.equal(taicangPrice.discountUsd, 400);
+
+  const savedLeasePrice = await jsonFetch(base + "/api/admin/lease-prices/" + taicangPrice.id, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
+    body: JSON.stringify({ ...taicangPrice, discountUsd: 350, displayPriceUsd: 1950, enabled: true }),
+  });
+  assert.equal(savedLeasePrice.status, 200);
+  assert.equal(savedLeasePrice.body.row.displayPriceUsd, 1950);
+
+  const invalidLeasePrice = await jsonFetch(base + "/api/admin/lease-prices/" + taicangPrice.id, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
+    body: JSON.stringify({ ...taicangPrice, discountUsd: 350, displayPriceUsd: 1900, enabled: true }),
+  });
+  assert.equal(invalidLeasePrice.status, 400);
+  assert.equal(invalidLeasePrice.body.error, "invalid_lease_price");
+
   const railQuotes = await jsonFetch(`${base}/api/admin/rail-public-quotes`, {
     headers: { "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
   });

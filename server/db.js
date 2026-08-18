@@ -27,6 +27,7 @@ const TABLE_COLUMNS = {
   ],
   rail_cost_lease_pickups: ["code", "nameCn", "nameEn", "sortOrder", "enabled"],
   rail_cost_lease_table_prices: ["id", "pickupCode", "containerSize", "priceUsd", "enabled"],
+  rail_cost_lease_prices: ["id", "borderCode", "pickupCode", "containerSize", "priceUsd", "discountUsd", "displayPriceUsd", "enabled"],
   rail_cost_lease_rules: [
     "id",
     "borderCode",
@@ -114,6 +115,18 @@ export function ensureSchema(db) {
       unique (pickupCode, containerSize)
     );
 
+    create table if not exists rail_cost_lease_prices (
+      id integer primary key,
+      borderCode text not null,
+      pickupCode text not null,
+      containerSize text not null,
+      priceUsd real not null,
+      discountUsd real not null default 0,
+      displayPriceUsd real not null,
+      enabled integer not null default 1,
+      unique (borderCode, pickupCode, containerSize)
+    );
+
     create table if not exists rail_cost_lease_rules (
       id integer primary key,
       borderCode text not null,
@@ -132,9 +145,13 @@ export function ensureSchema(db) {
 }
 
 export function seedDatabase(db) {
-  if (db.prepare("select value from rail_cost_meta where key = 'initial_seed_version'").get()) return;
+  if (db.prepare("select value from rail_cost_meta where key = ?").get("initial_seed_version")) {
+    ensureLeasePrices(db);
+    return;
+  }
   if (domainRowCount(db) > 0) {
-    db.prepare("insert or replace into rail_cost_meta (key, value) values ('initial_seed_version', ?)").run(INITIAL_SEED_VERSION);
+    db.prepare("insert or replace into rail_cost_meta (key, value) values (?, ?)").run("initial_seed_version", INITIAL_SEED_VERSION);
+    ensureLeasePrices(db);
     return;
   }
 
@@ -146,7 +163,28 @@ export function seedDatabase(db) {
   insertMany(db, "rail_cost_lease_pickups", rows.leasePickups);
   insertMany(db, "rail_cost_lease_table_prices", rows.leaseTablePrices);
   insertMany(db, "rail_cost_lease_rules", rows.leaseRules);
-  db.prepare("insert or replace into rail_cost_meta (key, value) values ('initial_seed_version', ?)").run(INITIAL_SEED_VERSION);
+  db.prepare("insert or replace into rail_cost_meta (key, value) values (?, ?)").run("initial_seed_version", INITIAL_SEED_VERSION);
+  ensureLeasePrices(db);
+}
+
+function ensureLeasePrices(db) {
+  if (db.prepare("select count(1) as c from rail_cost_lease_prices").get().c > 0) return;
+  const borders = db.prepare("select code from rail_cost_borders where enabled = 1 order by sortOrder, code").all();
+  const bases = db.prepare("select pickupCode, containerSize, priceUsd, enabled from rail_cost_lease_table_prices").all();
+  const rules = db.prepare("select * from rail_cost_lease_rules where enabled = 1 order by priority desc, id").all();
+  let id = 1;
+  for (const border of borders) {
+    for (const base of bases) {
+      const rule = rules.find((item) => item.borderCode === border.code && item.containerSize === base.containerSize && (item.pickupCode === base.pickupCode || item.pickupCode === ""));
+      if (rule?.ruleType === "unavailable") continue;
+      const priceUsd = Number(base.priceUsd);
+      const displayPriceUsd = rule?.ruleType === "fixed" ? Number(rule.fixedUsd) : priceUsd + Number(rule?.adjustmentUsd || 0);
+      const discountUsd = priceUsd - displayPriceUsd;
+      if (!Number.isFinite(displayPriceUsd) || displayPriceUsd < 0 || discountUsd < 0) continue;
+      db.prepare("insert or ignore into rail_cost_lease_prices (id, borderCode, pickupCode, containerSize, priceUsd, discountUsd, displayPriceUsd, enabled) values (@id, @borderCode, @pickupCode, @containerSize, @priceUsd, @discountUsd, @displayPriceUsd, @enabled)").run({ id, borderCode: border.code, pickupCode: base.pickupCode, containerSize: base.containerSize, priceUsd, discountUsd, displayPriceUsd, enabled: base.enabled });
+      id += 1;
+    }
+  }
 }
 
 export function loadQueryData(db) {
@@ -156,6 +194,7 @@ export function loadQueryData(db) {
     railPublicQuotes: selectEnabled(db, "rail_cost_rail_public_quotes", "borderCode, destinationStationCode, containerSize, ownership"),
     railRules: selectEnabled(db, "rail_cost_rail_rules", "priority desc, id"),
     leasePickups: selectEnabled(db, "rail_cost_lease_pickups", "sortOrder, code"),
+    leasePrices: selectEnabled(db, "rail_cost_lease_prices", "borderCode, pickupCode, containerSize"),
     leaseTablePrices: selectEnabled(db, "rail_cost_lease_table_prices", "pickupCode, containerSize"),
     leaseRules: selectEnabled(db, "rail_cost_lease_rules", "priority desc, id"),
   };
@@ -191,7 +230,7 @@ export function updateResourceRow(db, resourceKey, id, payload) {
   const idField = resource.idField;
   const columns = Object.keys(row).filter((column) => column !== idField);
   const assignments = columns.map((column) => `${column} = @${column}`).join(", ");
-  const result = db.prepare(`update ${resource.table} set ${assignments} where ${idField} = @${idField}`).run(row);
+  const result = db.prepare(`update ${resource.table} set ${assignments} where ${idField} = @${idField}`).run(encodeBooleans(row));
   if (result.changes === 0) return null;
   return getResourceRow(db, resourceKey, id);
 }
@@ -293,6 +332,11 @@ function validatePayload(resource, row) {
   }
   if ("borderCode" in row && row.borderCode && !["MANZHOULI", "ERLIAN"].includes(row.borderCode)) {
     throw appError("invalid_field", 400, "borderCode");
+  }
+  if (resource.key === "lease-prices") {
+    if (row.discountUsd < 0 || row.displayPriceUsd < 0 || row.displayPriceUsd !== row.priceUsd - row.discountUsd) {
+      throw appError("invalid_lease_price", 400, "displayPriceUsd");
+    }
   }
   if (resource.key === "lease-rules" && row.ruleType === "fixed" && row.fixedUsd === null) {
     throw appError("invalid_field", 400, "fixedUsd");

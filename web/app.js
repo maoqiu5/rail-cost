@@ -280,6 +280,7 @@ function emptyCatalog() {
     railRules: [],
     leasePickups: [],
     leaseTablePrices: [],
+    leasePrices: [],
     leaseRules: [],
   };
 }

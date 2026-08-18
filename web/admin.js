@@ -23,6 +23,7 @@ export function initAdminModule({ nav, table, form, title, status, newButton, t,
     event.preventDefault();
     try {
       const payload = formPayload();
+      validateResourcePayload(payload);
       const id = editingRow?.[currentResource.idField];
       const path = id ? `./api/admin/${currentResource.key}/${encodeURIComponent(id)}` : `./api/admin/${currentResource.key}`;
       const method = id ? "PUT" : "POST";
@@ -86,6 +87,7 @@ export function initAdminModule({ nav, table, form, title, status, newButton, t,
 
   function renderTable() {
     title.textContent = t(currentResource.labelKey);
+    newButton.hidden = currentResource.key === "lease-prices";
     if (!loaded) {
       table.innerHTML = `<p class="empty">${escapeHtml(t("admin.empty"))}</p>`;
       return;
@@ -146,13 +148,23 @@ export function initAdminModule({ nav, table, form, title, status, newButton, t,
     const data = new FormData(form);
     return Object.fromEntries(
       currentResource.fields
-        .filter((field) => !field.readonly && !(editingRow && field.key === currentResource.idField))
+        .filter((field) => !(editingRow && field.key === currentResource.idField) && (!field.readonly || Boolean(editingRow)))
         .map((field) => {
           if (field.type === "boolean") return [field.key, data.has(field.key)];
           if (field.type === "number") return [field.key, data.get(field.key) === "" ? null : Number(data.get(field.key))];
           return [field.key, data.get(field.key) || ""];
         }),
     );
+  }
+
+  function validateResourcePayload(payload) {
+    if (currentResource.key !== "lease-prices") return;
+    const priceUsd = Number(payload.priceUsd);
+    const discountUsd = Number(payload.discountUsd);
+    const displayPriceUsd = Number(payload.displayPriceUsd);
+    if (discountUsd < 0 || displayPriceUsd < 0 || Math.abs(displayPriceUsd - (priceUsd - discountUsd)) > 0.000001) {
+      throw new Error(t("admin.error.leasePriceFormula"));
+    }
   }
 
   function showStatus(message, isError = false) {
