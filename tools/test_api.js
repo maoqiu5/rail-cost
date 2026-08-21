@@ -77,40 +77,25 @@ try {
   assert.equal(leasePrices.status, 200);
   const taicangPrice = leasePrices.body.rows.find((row) => row.borderCode === "MANZHOULI" && row.pickupCode === "TAICANG" && row.containerSize === "40");
   assert.ok(taicangPrice);
+  assert.equal(leasePrices.body.fields.some((field) => field.key === "priceUsd"), false);
+  assert.equal(leasePrices.body.fields.some((field) => field.key === "discountUsd"), false);
   assert.equal(taicangPrice.displayPriceUsd, 1900);
-  assert.equal(taicangPrice.discountUsd, 400);
 
   const savedLeasePrice = await jsonFetch(base + "/api/admin/lease-prices/" + taicangPrice.id, {
     method: "PUT",
     headers: { "Content-Type": "application/json", "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
-    body: JSON.stringify({ ...taicangPrice, discountUsd: 350, displayPriceUsd: 1950, enabled: true }),
+    body: JSON.stringify({ ...taicangPrice, displayPriceUsd: 1950, enabled: true }),
   });
   assert.equal(savedLeasePrice.status, 200);
   assert.equal(savedLeasePrice.body.row.displayPriceUsd, 1950);
 
-  const invalidLeasePrice = await jsonFetch(base + "/api/admin/lease-prices/" + taicangPrice.id, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
-    body: JSON.stringify({ ...taicangPrice, discountUsd: 350, displayPriceUsd: 1900, enabled: true }),
-  });
-  assert.equal(invalidLeasePrice.status, 400);
-  assert.equal(invalidLeasePrice.body.error, "invalid_lease_price");
-
-  const negativeLeaseDiscount = await jsonFetch(base + "/api/admin/lease-prices/" + taicangPrice.id, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
-    body: JSON.stringify({ ...taicangPrice, discountUsd: -1, displayPriceUsd: 2301, enabled: true }),
-  });
-  assert.equal(negativeLeaseDiscount.status, 400);
-  assert.equal(negativeLeaseDiscount.body.error, "invalid_lease_price");
-
   const negativeLeaseDisplayPrice = await jsonFetch(base + "/api/admin/lease-prices/" + taicangPrice.id, {
     method: "PUT",
     headers: { "Content-Type": "application/json", "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
-    body: JSON.stringify({ ...taicangPrice, discountUsd: 2301, displayPriceUsd: -1, enabled: true }),
+    body: JSON.stringify({ ...taicangPrice, displayPriceUsd: -1, enabled: true }),
   });
   assert.equal(negativeLeaseDisplayPrice.status, 400);
-  assert.equal(negativeLeaseDisplayPrice.body.error, "invalid_lease_price");
+  assert.equal(negativeLeaseDisplayPrice.body.error, "invalid_field");
 
   const freightPrices = await jsonFetch(`${base}/api/admin/freight-prices`, {
     headers: { "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
@@ -164,27 +149,17 @@ try {
   const railQuotes = await jsonFetch(`${base}/api/admin/rail-public-quotes`, {
     headers: { "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
   });
-  assert.equal(railQuotes.status, 200);
-  assert.equal(railQuotes.body.fields.some((field) => field.key === "ownership"), true);
+  assert.equal(railQuotes.status, 404);
 
-  const createdRailQuote = await jsonFetch(`${base}/api/admin/rail-public-quotes`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-BrianHub-User": "brian",
-      "X-BrianHub-Role": "admin",
-    },
-    body: JSON.stringify({
-      borderCode: "MANZHOULI",
-      destinationStationCode: "183502",
-      containerSize: "40",
-      ownership: "SOC",
-      quoteUsd: 3870,
-      enabled: true,
-    }),
+  const railRules = await jsonFetch(`${base}/api/admin/rail-rules`, {
+    headers: { "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
   });
-  assert.equal(createdRailQuote.status, 201);
-  assert.equal(createdRailQuote.body.row.ownership, "SOC");
+  assert.equal(railRules.status, 404);
+
+  const leaseRules = await jsonFetch(`${base}/api/admin/lease-rules`, {
+    headers: { "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
+  });
+  assert.equal(leaseRules.status, 404);
 
   const created = await jsonFetch(`${base}/api/admin/lease-pickups`, {
     method: "POST",
@@ -203,26 +178,6 @@ try {
   });
   assert.equal(created.status, 201);
   assert.equal(created.body.row.code, "TESTPORT");
-
-  const invalid = await jsonFetch(`${base}/api/admin/lease-rules`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-BrianHub-User": "brian",
-      "X-BrianHub-Role": "admin",
-    },
-    body: JSON.stringify({
-      borderCode: "MANZHOULI",
-      pickupCode: "TAICANG",
-      containerSize: "45",
-      ruleType: "fixed",
-      fixedUsd: 2000,
-      priority: 1,
-      enabled: true,
-    }),
-  });
-  assert.equal(invalid.status, 400);
-  assert.equal(invalid.body.error, "invalid_field");
 
   const deleted = await jsonFetch(`${base}/api/admin/lease-pickups/TESTPORT`, {
     method: "DELETE",

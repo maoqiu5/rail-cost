@@ -59,12 +59,13 @@ assert.equal(
 );
 
 const adminTables = loadAdminTables(db);
+assert.deepEqual(Object.keys(adminTables), ["borders", "destinations", "freight-prices", "lease-pickups", "lease-prices"]);
 assert.equal(adminTables["lease-pickups"].rows.some((row) => row.code === "TAICANG"), true);
-assert.equal(adminTables["lease-rules"].fields.some((field) => field.key === "fixedUsd"), true);
 assert.equal(adminTables["lease-prices"].fields.some((field) => field.key === "borderCode"), true);
-assert.equal(adminTables["lease-prices"].fields.some((field) => field.key === "discountUsd"), true);
+assert.equal(adminTables["lease-prices"].fields.some((field) => field.key === "priceUsd"), false);
+assert.equal(adminTables["lease-prices"].fields.some((field) => field.key === "discountUsd"), false);
 assert.equal(adminTables["lease-prices"].fields.some((field) => field.key === "displayPriceUsd"), true);
-assert.equal(adminTables["rail-public-quotes"].fields.some((field) => field.key === "ownership"), true);
+assert.equal(adminTables["freight-prices"].fields.some((field) => field.key === "socPriceUsd"), true);
 assert.equal(
   queryData.railPublicQuotes.every((row) => row.ownership),
   true,

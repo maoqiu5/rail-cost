@@ -1,6 +1,20 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { formatAdminValue, renderAdminField, renderAdminNav } from "../web/admin.js";
+import { ADMIN_RESOURCES } from "../web/admin-model.js";
+
+
+assert.deepEqual(
+  ADMIN_RESOURCES.map((resource) => resource.key),
+  ["borders", "destinations", "freight-prices", "lease-pickups", "lease-prices"],
+  "admin should expose only reference data and final price maintenance resources",
+);
+const leasePriceResource = ADMIN_RESOURCES.find((resource) => resource.key === "lease-prices");
+assert.deepEqual(
+  leasePriceResource.fields.map((field) => field.key),
+  ["id", "borderCode", "pickupCode", "containerSize", "displayPriceUsd", "enabled"],
+  "lease price maintenance should expose only final displayed price",
+);
 
 const catalog = {
   borders: [{ code: "MANZHOULI", nameCn: "满洲里", nameEn: "Manzhouli" }],
@@ -77,7 +91,12 @@ assert.match(navHtml, /租箱价格/);
 assert.match(navHtml, /class="active" data-resource="freight-prices"/);
 
 const adminSource = readFileSync(new URL("../web/admin.js", import.meta.url), "utf8");
-assert.match(adminSource, /editingRow\?\.\[field\.key\]/, "readonly edit fields should be preserved in the save payload");
+assert.match(adminSource, /sourceRow\?\.\[field\.key\]/, "readonly edit fields should be preserved in the inline save payload");
 assert.match(adminSource, /currentResource\.key === "lease-prices"/, "lease price rows should not expose manual creation from the generic form");
+
+assert.match(adminSource, /data-save-id/, "admin rows should expose inline save buttons");
+assert.match(adminSource, /editingRowId/, "admin editing state should be row-scoped");
+assert.doesNotMatch(adminSource, /class="admin-form"/, "admin should not use the old bottom edit form markup");
+
 
 console.log("admin display tests passed");

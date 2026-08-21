@@ -3,49 +3,35 @@ import { ADMIN_RESOURCES } from "./admin-model.js?v=20260821-price-maintenance";
 export function initAdminModule({ nav, table, form, title, status, newButton, t, fetchJson, onDataChanged, getCatalog }) {
   let currentResource = ADMIN_RESOURCES[0];
   let rows = [];
-  let editingRow = null;
+  let editingRowId = "";
   let loaded = false;
 
   nav.addEventListener("click", (event) => {
     const button = event.target.closest("[data-resource]");
     if (!button) return;
     currentResource = ADMIN_RESOURCES.find((resource) => resource.key === button.dataset.resource) || currentResource;
-    editingRow = null;
+    editingRowId = "";
     load();
   });
 
   newButton.addEventListener("click", () => {
-    editingRow = null;
-    renderForm();
-  });
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    try {
-      const payload = formPayload();
-      validateResourcePayload(payload);
-      const id = editingRow?.[currentResource.idField];
-      const path = id ? `./api/admin/${currentResource.key}/${encodeURIComponent(id)}` : `./api/admin/${currentResource.key}`;
-      const method = id ? "PUT" : "POST";
-      await fetchJson(path, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      showStatus(t("admin.saved"));
-      await onDataChanged();
-      await load();
-    } catch {
-      showStatus(t("admin.error.save"), true);
-    }
+    const row = Object.fromEntries(currentResource.fields.map((field) => [field.key, field.type === "boolean" ? true : ""]));
+    rows = [row, ...rows];
+    editingRowId = "__new__";
+    renderLocale();
   });
 
   table.addEventListener("click", async (event) => {
     const editButton = event.target.closest("[data-edit-id]");
+    const saveButton = event.target.closest("[data-save-id]");
     const deleteButton = event.target.closest("[data-delete-id]");
     if (editButton) {
-      editingRow = rows.find((row) => String(row[currentResource.idField]) === editButton.dataset.editId);
-      renderForm();
+      editingRowId = editButton.dataset.editId;
+      renderTable();
+      return;
+    }
+    if (saveButton) {
+      await saveInlineRow(saveButton.dataset.saveId);
       return;
     }
     if (deleteButton) {
@@ -64,7 +50,7 @@ export function initAdminModule({ nav, table, form, title, status, newButton, t,
   function renderLocale() {
     renderNav();
     renderTable();
-    renderForm();
+    form.innerHTML = "";
   }
 
   async function load() {
@@ -84,7 +70,7 @@ export function initAdminModule({ nav, table, form, title, status, newButton, t,
 
   function renderTable() {
     title.textContent = t(currentResource.labelKey);
-    newButton.hidden = currentResource.key === "lease-prices";
+    newButton.hidden = ["freight-prices", "lease-prices"].includes(currentResource.key);
     if (!loaded) {
       table.innerHTML = `<p class="empty">${escapeHtml(t("admin.empty"))}</p>`;
       return;
@@ -109,45 +95,67 @@ export function initAdminModule({ nav, table, form, title, status, newButton, t,
   }
 
   function renderRow(row, fields) {
-    const id = String(row[currentResource.idField]);
+    const id = row[currentResource.idField] === undefined || row[currentResource.idField] === "" ? "__new__" : String(row[currentResource.idField]);
+    const editing = id === editingRowId;
     return `
-      <tr>
-        ${fields.map((field) => `<td>${escapeHtml(formatAdminValue(row[field.key], field, getCatalog?.()))}</td>`).join("")}
+      <tr data-row-id="${escapeHtml(id)}" class="${editing ? "editing" : ""}">
+        ${fields.map((field) => `<td>${editing ? renderInlineField(field, row[field.key], row) : escapeHtml(formatAdminValue(row[field.key], field, getCatalog?.()))}</td>`).join("")}
         <td class="admin-actions">
-          <button type="button" data-edit-id="${escapeHtml(id)}">${escapeHtml(t("admin.edit"))}</button>
-          <button type="button" data-delete-id="${escapeHtml(id)}">${escapeHtml(t("admin.delete"))}</button>
+          <button type="button" data-edit-id="${escapeHtml(id)}" ${editing ? "disabled" : ""}>${escapeHtml(t("admin.edit"))}</button>
+          <button type="button" data-delete-id="${escapeHtml(id)}" ${id === "__new__" ? "disabled" : ""}>${escapeHtml(t("admin.delete"))}</button>
+          <button type="button" data-save-id="${escapeHtml(id)}" ${editing ? "" : "disabled"}>${escapeHtml(t("admin.save"))}</button>
         </td>
       </tr>`;
   }
 
-  function renderForm() {
-    const row = editingRow || {};
-    form.innerHTML = `
-      <h3>${escapeHtml(editingRow ? t("admin.edit") : t("admin.new"))}</h3>
-      <div class="admin-fields">
-        ${currentResource.fields.map((field) => renderField(field, row[field.key])).join("")}
-      </div>
-      <button type="submit">${escapeHtml(t("admin.save"))}</button>`;
-  }
-
-  function renderField(field, value) {
+  function renderInlineField(field, value, row) {
     return renderAdminField({
       field,
       value,
-      editingRow,
+      editingRow: row,
       currentIdField: currentResource.idField,
       catalog: getCatalog?.(),
       t,
     });
   }
 
-  function formPayload() {
-    const data = new FormData(form);
+  async function saveInlineRow(id) {
+    const tableRow = table.querySelector(`[data-row-id="${cssEscape(id)}"]`);
+    if (!tableRow) return;
+    const sourceRow = id === "__new__" ? {} : rows.find((row) => String(row[currentResource.idField]) === id) || {};
+    try {
+      const payload = rowPayload(tableRow, sourceRow, id !== "__new__");
+      validateResourcePayload(payload);
+      const path = id === "__new__" ? `./api/admin/${currentResource.key}` : `./api/admin/${currentResource.key}/${encodeURIComponent(id)}`;
+      const method = id === "__new__" ? "POST" : "PUT";
+      await fetchJson(path, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      showStatus(t("admin.saved"));
+      editingRowId = "";
+      await onDataChanged();
+      await load();
+    } catch {
+      showStatus(t("admin.error.save"), true);
+    }
+  }
+
+  function rowPayload(tableRow, sourceRow, editingExisting) {
+    const data = new FormData();
+    tableRow.querySelectorAll("input, select").forEach((input) => {
+      if (input.type === "checkbox") {
+        if (input.checked) data.set(input.name, "on");
+      } else {
+        data.set(input.name, input.value);
+      }
+    });
     return Object.fromEntries(
       currentResource.fields
-        .filter((field) => !(editingRow && field.key === currentResource.idField) && (!field.readonly || Boolean(editingRow)))
+        .filter((field) => !(editingExisting && field.key === currentResource.idField) && (!field.readonly || editingExisting))
         .map((field) => {
-          const rawValue = data.has(field.key) ? data.get(field.key) : editingRow?.[field.key];
+          const rawValue = data.has(field.key) ? data.get(field.key) : sourceRow?.[field.key];
           if (field.type === "boolean") return [field.key, data.has(field.key)];
           if (field.type === "number") return [field.key, rawValue === "" || rawValue === undefined ? null : Number(rawValue)];
           return [field.key, rawValue || ""];
@@ -156,12 +164,11 @@ export function initAdminModule({ nav, table, form, title, status, newButton, t,
   }
 
   function validateResourcePayload(payload) {
-    if (currentResource.key !== "lease-prices") return;
-    const priceUsd = Number(payload.priceUsd);
-    const discountUsd = Number(payload.discountUsd);
-    const displayPriceUsd = Number(payload.displayPriceUsd);
-    if (discountUsd < 0 || displayPriceUsd < 0 || Math.abs(displayPriceUsd - (priceUsd - discountUsd)) > 0.000001) {
-      throw new Error(t("admin.error.leasePriceFormula"));
+    if (currentResource.key === "lease-prices" && Number(payload.displayPriceUsd) < 0) {
+      throw new Error(t("admin.error.finalPriceNonNegative"));
+    }
+    if (currentResource.key === "freight-prices" && (Number(payload.socPriceUsd) < 0 || Number(payload.cocPriceUsd) < 0)) {
+      throw new Error(t("admin.error.finalPriceNonNegative"));
     }
   }
 
@@ -271,4 +278,9 @@ function escapeHtml(value) {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+function cssEscape(value) {
+  if (globalThis.CSS?.escape) return CSS.escape(String(value));
+  return String(value).replaceAll('"', '\"');
 }

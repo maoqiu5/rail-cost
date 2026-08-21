@@ -18,5 +18,5 @@ Rail Cost is a standalone BrianHub project for overseas rail cost lookup, TC con
 ## Price Maintenance
 
 - `rail_cost_freight_prices`: final rail freight prices by border, destination station, and container size.
-- `rail_cost_lease_prices`: final lease prices by border, pickup location, and container size.
+- `rail_cost_lease_prices`: final lease prices by border, pickup location, and container size; the admin page edits only `displayPriceUsd`.
 - Admin users maintain final prices directly; query pages read only the final price tables.

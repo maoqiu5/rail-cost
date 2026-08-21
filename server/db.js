@@ -424,10 +424,8 @@ function validatePayload(db, resource, row) {
   if (resource.key === "freight-prices" && (row.socPriceUsd < 0 || row.cocPriceUsd < 0)) {
     throw appError("invalid_field", 400, row.socPriceUsd < 0 ? "socPriceUsd" : "cocPriceUsd");
   }
-  if (resource.key === "lease-prices") {
-    if (row.discountUsd < 0 || row.displayPriceUsd < 0 || row.displayPriceUsd !== row.priceUsd - row.discountUsd) {
-      throw appError("invalid_lease_price", 400, "displayPriceUsd");
-    }
+  if (resource.key === "lease-prices" && row.displayPriceUsd < 0) {
+    throw appError("invalid_field", 400, "displayPriceUsd");
   }
   if (resource.key === "lease-rules" && row.ruleType === "fixed" && row.fixedUsd === null) {
     throw appError("invalid_field", 400, "fixedUsd");
