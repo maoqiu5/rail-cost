@@ -273,6 +273,7 @@ export function loadQueryData(db) {
     borders: selectEnabled(db, "rail_cost_borders", "sortOrder, code"),
     destinations: selectEnabled(db, "rail_cost_destinations", "sortOrder, stationCode"),
     railPublicQuotes: selectEnabled(db, "rail_cost_rail_public_quotes", "borderCode, destinationStationCode, containerSize, ownership"),
+    freightPrices: selectEnabled(db, "rail_cost_freight_prices", "borderCode, destinationStationCode, containerSize"),
     railRules: selectEnabled(db, "rail_cost_rail_rules", "priority desc, id"),
     leasePickups: selectEnabled(db, "rail_cost_lease_pickups", "sortOrder, code"),
     leasePrices: selectEnabled(db, "rail_cost_lease_prices", "borderCode, pickupCode, containerSize"),

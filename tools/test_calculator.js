@@ -15,37 +15,15 @@ const dir = mkdtempSync(join(tmpdir(), "rail-cost-calc-"));
 const db = openDatabase(join(dir, "rail-cost.db"));
 ensureSchema(db);
 seedDatabase(db);
-const catalog = loadQueryData(db);
-
-db.prepare("insert into rail_cost_rail_public_quotes (borderCode, destinationStationCode, containerSize, ownership, quoteUsd, enabled) values (?, ?, ?, ?, ?, 1)").run(
-  "MANZHOULI",
-  "183502",
-  "40",
-  "SOC",
-  3870,
-);
-db.prepare("insert into rail_cost_rail_public_quotes (borderCode, destinationStationCode, containerSize, ownership, quoteUsd, enabled) values (?, ?, ?, ?, ?, 1)").run(
-  "MANZHOULI",
-  "183502",
-  "40",
-  "COC",
-  3900,
-);
-db.prepare("insert into rail_cost_rail_public_quotes (borderCode, destinationStationCode, containerSize, ownership, quoteUsd, enabled) values (?, ?, ?, ?, ?, 1)").run(
+db.prepare("insert into rail_cost_freight_prices (borderCode, destinationStationCode, containerSize, socPriceUsd, cocPriceUsd, enabled) values (?, ?, ?, ?, ?, 1)").run(
   "ERLIAN",
   "033004",
   "40",
-  "SOC",
   4250,
+  4380,
 );
-db.prepare("insert into rail_cost_rail_public_quotes (borderCode, destinationStationCode, containerSize, ownership, quoteUsd, enabled) values (?, ?, ?, ?, ?, 1)").run(
-  "ERLIAN",
-  "033004",
-  "40",
-  "COC",
-  4280,
-);
-const ownershipCatalog = loadQueryData(db);
+const catalog = loadQueryData(db);
+assert.equal(catalog.freightPrices.some((row) => row.borderCode === "MANZHOULI" && row.destinationStationCode === "183502"), true);
 
 const vorsino = findRailDestination("Vorsino", catalog);
 assert.equal(vorsino.stationCode, "183502");
@@ -63,7 +41,7 @@ assert.deepEqual(
     destinationCode: "183502",
     containerSize: "40",
     ownership: "SOC",
-  }, ownershipCatalog).totalUsd,
+  }, catalog).totalUsd,
   3870,
   "Manzhouli 40 SOC should use the ownership-specific quote when maintained",
 );
@@ -74,7 +52,7 @@ assert.equal(
     destinationCode: "183502",
     containerSize: "40",
     ownership: "COC",
-  }, ownershipCatalog).totalUsd,
+  }, catalog).totalUsd,
   3900,
   "Manzhouli 40 COC should use the ownership-specific quote when maintained",
 );
@@ -85,9 +63,9 @@ assert.equal(
     destinationCode: "033004",
     containerSize: "40",
     ownership: "SOC",
-  }, ownershipCatalog).totalUsd,
+  }, catalog).totalUsd,
   4250,
-  "Erlian Shushary 40 SOC should use the maintained ownership-specific quote even without a rail rule",
+  "Erlian Shushary 40 SOC should use the maintained final freight price",
 );
 
 assert.equal(
@@ -96,9 +74,9 @@ assert.equal(
     destinationCode: "033004",
     containerSize: "40",
     ownership: "COC",
-  }, ownershipCatalog).totalUsd,
-  4280,
-  "Erlian Shushary 40 COC should use the maintained ownership-specific quote even without a rail rule",
+  }, catalog).totalUsd,
+  4380,
+  "Erlian Shushary 40 COC should use the maintained final freight price",
 );
 
 assert.equal(

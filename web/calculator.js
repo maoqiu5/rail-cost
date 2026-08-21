@@ -13,6 +13,23 @@ export function calculateRailCost({ border, destinationCode, containerSize, owne
   const borderRow = findCatalogBorder(border, catalog);
   if (!borderRow) return unavailable("error.rail.unknownBorder");
 
+  const maintainedFreight = (catalog.freightPrices || []).find(
+    (item) => item.borderCode === borderRow.code && item.destinationStationCode === destination.stationCode && item.containerSize === containerSize,
+  );
+  if (maintainedFreight) {
+    const totalUsd = Number(ownership === "SOC" ? maintainedFreight.socPriceUsd : maintainedFreight.cocPriceUsd);
+    return result({
+      border: borderRow.code,
+      destination,
+      containerSize,
+      ownership,
+      baseUsd: totalUsd,
+      adjustmentUsd: 0,
+      totalUsd,
+      ruleKey: "rule.rail.maintained",
+    });
+  }
+
   const exactQuote = findOwnershipQuote({
     quotes: catalog.railPublicQuotes,
     borderCode: borderRow.code,
