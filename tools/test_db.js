@@ -27,6 +27,23 @@ assert.equal(
   "seed should include Taicang pickup",
 );
 
+assert.equal(
+  db.prepare("select count(1) as c from rail_cost_freight_prices").get().c > 0,
+  true,
+  "seed should create final railway freight prices",
+);
+const manzhouliVorsino40 = db
+  .prepare("select socPriceUsd, cocPriceUsd from rail_cost_freight_prices where borderCode = 'MANZHOULI' and destinationStationCode = '183502' and containerSize = '40'")
+  .get();
+assert.equal(manzhouliVorsino40.socPriceUsd, 3870, "Manzhouli Vorsino 40 ft SOC final price");
+assert.equal(manzhouliVorsino40.cocPriceUsd, 3900, "Manzhouli Vorsino 40 ft COC final price");
+
+const erlianVorsino40 = db
+  .prepare("select socPriceUsd, cocPriceUsd from rail_cost_freight_prices where borderCode = 'ERLIAN' and destinationStationCode = '183502' and containerSize = '40'")
+  .get();
+assert.equal(erlianVorsino40.socPriceUsd, 4300, "Erlian Vorsino 40 ft SOC final price");
+assert.equal(erlianVorsino40.cocPriceUsd, 4300, "Erlian Vorsino 40 ft COC final price");
+
 const queryData = loadQueryData(db);
 assert.equal(queryData.borders.some((border) => border.code === "MANZHOULI"), true);
 assert.equal(

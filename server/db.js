@@ -11,6 +11,7 @@ const TABLE_COLUMNS = {
   rail_cost_borders: ["code", "nameCn", "nameEn", "sortOrder", "enabled"],
   rail_cost_destinations: ["stationCode", "nameCn", "nameEn", "sortOrder", "enabled"],
   rail_cost_rail_public_quotes: ["id", "borderCode", "destinationStationCode", "containerSize", "ownership", "quoteUsd", "enabled"],
+  rail_cost_freight_prices: ["id", "borderCode", "destinationStationCode", "containerSize", "socPriceUsd", "cocPriceUsd", "enabled", "updatedAt"],
   rail_cost_rail_rules: [
     "id",
     "borderCode",
@@ -98,6 +99,18 @@ export function ensureSchema(db) {
       enabled integer not null default 1
     );
 
+    create table if not exists rail_cost_freight_prices (
+      id integer primary key,
+      borderCode text not null,
+      destinationStationCode text not null,
+      containerSize text not null,
+      socPriceUsd real not null,
+      cocPriceUsd real not null,
+      enabled integer not null default 1,
+      updatedAt text not null default (datetime('now')),
+      unique (borderCode, destinationStationCode, containerSize)
+    );
+
     create table if not exists rail_cost_lease_pickups (
       code text primary key,
       nameCn text not null,
@@ -147,11 +160,13 @@ export function ensureSchema(db) {
 export function seedDatabase(db) {
   if (db.prepare("select value from rail_cost_meta where key = ?").get("initial_seed_version")) {
     ensureLeasePrices(db);
+    ensureFreightPrices(db);
     return;
   }
   if (domainRowCount(db) > 0) {
     db.prepare("insert or replace into rail_cost_meta (key, value) values (?, ?)").run("initial_seed_version", INITIAL_SEED_VERSION);
     ensureLeasePrices(db);
+    ensureFreightPrices(db);
     return;
   }
 
@@ -165,6 +180,72 @@ export function seedDatabase(db) {
   insertMany(db, "rail_cost_lease_rules", rows.leaseRules);
   db.prepare("insert or replace into rail_cost_meta (key, value) values (?, ?)").run("initial_seed_version", INITIAL_SEED_VERSION);
   ensureLeasePrices(db);
+  ensureFreightPrices(db);
+}
+
+function ensureFreightPrices(db) {
+  if (db.prepare("select count(1) as c from rail_cost_freight_prices").get().c > 0) return;
+  const quotes = db.prepare("select * from rail_cost_rail_public_quotes where enabled = 1 order by id").all();
+  const rules = db.prepare("select * from rail_cost_rail_rules where enabled = 1 order by priority desc, id").all();
+  const rows = new Map();
+
+  function rowFor(borderCode, destinationStationCode, containerSize) {
+    const key = `${borderCode}|${destinationStationCode}|${containerSize}`;
+    if (!rows.has(key)) rows.set(key, { borderCode, destinationStationCode, containerSize, socPriceUsd: null, cocPriceUsd: null, enabled: 1 });
+    return rows.get(key);
+  }
+
+  for (const quote of quotes) {
+    if (quote.ownership === "SOC" || quote.ownership === "*") {
+      rowFor(quote.borderCode, quote.destinationStationCode, quote.containerSize).socPriceUsd = finalRailPrice({ quote, ownership: "SOC", rules });
+    }
+    if (quote.ownership === "COC" || quote.ownership === "*") {
+      rowFor(quote.borderCode, quote.destinationStationCode, quote.containerSize).cocPriceUsd = finalRailPrice({ quote, ownership: "COC", rules });
+    }
+  }
+
+  for (const rule of rules.filter((item) => item.ruleType === "fixed")) {
+    if (!rule.destinationStationCode) continue;
+    const row = rowFor(rule.borderCode, rule.destinationStationCode, rule.containerSize);
+    const fixedUsd = Number(rule.fixedUsd);
+    if (rule.ownership === "SOC" || rule.ownership === "*") row.socPriceUsd ??= fixedUsd;
+    if (rule.ownership === "COC" || rule.ownership === "*") row.cocPriceUsd ??= fixedUsd;
+  }
+
+  let id = 1;
+  for (const row of rows.values()) {
+    if (!Number.isFinite(row.socPriceUsd) || !Number.isFinite(row.cocPriceUsd)) continue;
+    db.prepare("insert or ignore into rail_cost_freight_prices (id, borderCode, destinationStationCode, containerSize, socPriceUsd, cocPriceUsd, enabled) values (@id, @borderCode, @destinationStationCode, @containerSize, @socPriceUsd, @cocPriceUsd, @enabled)").run({ id, ...row });
+    id += 1;
+  }
+}
+
+function finalRailPrice({ quote, ownership, rules }) {
+  const quoteUsd = Number(quote.quoteUsd);
+  if (quote.ownership === ownership) return quoteUsd;
+  const rule = bestFinalRailRule(
+    rules.filter(
+      (item) =>
+        item.borderCode === quote.borderCode &&
+        item.containerSize === quote.containerSize &&
+        (item.destinationStationCode === quote.destinationStationCode || item.destinationStationCode === "") &&
+        (item.ownership === ownership || item.ownership === "*"),
+    ),
+    quote.destinationStationCode,
+  );
+  if (!rule || rule.ruleType === "unavailable") return null;
+  if (rule.ruleType === "fixed") return Number(rule.fixedUsd);
+  return quoteUsd + Number(rule.adjustmentUsd || 0);
+}
+
+function bestFinalRailRule(rules, destinationStationCode) {
+  return [...rules]
+    .sort((a, b) => {
+      const priority = Number(b.priority || 0) - Number(a.priority || 0);
+      if (priority !== 0) return priority;
+      return Number(b.destinationStationCode === destinationStationCode) - Number(a.destinationStationCode === destinationStationCode);
+    })
+    [0];
 }
 
 function ensureLeasePrices(db) {
