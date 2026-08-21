@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { formatAdminValue, renderAdminField } from "../web/admin.js";
+import { formatAdminValue, renderAdminField, renderAdminNav } from "../web/admin.js";
 
 const catalog = {
   borders: [{ code: "MANZHOULI", nameCn: "满洲里", nameEn: "Manzhouli" }],
@@ -52,6 +52,29 @@ assert.match(freightFieldHtml, /<select name="borderCode"/);
 assert.match(freightFieldHtml, /value="MANZHOULI" selected/);
 assert.match(freightFieldHtml, /MANZHOULI \/ 满洲里 \/ Manzhouli/);
 
+
+
+const navHtml = renderAdminNav(
+  [
+    { key: "borders", sectionKey: "admin.sections.referenceData", labelKey: "admin.resources.borders" },
+    { key: "freight-prices", sectionKey: "admin.sections.priceMaintenance", labelKey: "admin.resources.freightPrices" },
+    { key: "lease-prices", sectionKey: "admin.sections.priceMaintenance", labelKey: "admin.resources.leasePrices" },
+  ],
+  "freight-prices",
+  (key) =>
+    ({
+      "admin.sections.referenceData": "基础资料",
+      "admin.sections.priceMaintenance": "价格维护",
+      "admin.resources.borders": "口岸",
+      "admin.resources.freightPrices": "铁路运费",
+      "admin.resources.leasePrices": "租箱价格",
+    })[key] || key,
+);
+assert.match(navHtml, /基础资料/);
+assert.match(navHtml, /价格维护/);
+assert.match(navHtml, /铁路运费/);
+assert.match(navHtml, /租箱价格/);
+assert.match(navHtml, /class="active" data-resource="freight-prices"/);
 
 const adminSource = readFileSync(new URL("../web/admin.js", import.meta.url), "utf8");
 assert.match(adminSource, /editingRow\?\.\[field\.key\]/, "readonly edit fields should be preserved in the save payload");

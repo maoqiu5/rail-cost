@@ -68,7 +68,12 @@ for (const key of [
   "admin.error.load",
   "admin.error.save",
   "admin.error.delete",
+  "admin.sections.priceMaintenance",
+  "admin.resources.freightPrices",
+  "admin.resources.leasePrices",
   "admin.resources.leaseRules",
+  "admin.fields.socPriceUsd",
+  "admin.fields.cocPriceUsd",
   "admin.fields.fixedUsd",
 ]) {
   assert.equal(typeof TRANSLATIONS["en-US"][key], "string", `en-US missing admin key: ${key}`);

@@ -1,6 +1,7 @@
 export const ADMIN_RESOURCES = [
   {
     key: "borders",
+    sectionKey: "admin.sections.referenceData",
     labelKey: "admin.resources.borders",
     idField: "code",
     table: "rail_cost_borders",
@@ -14,6 +15,7 @@ export const ADMIN_RESOURCES = [
   },
   {
     key: "destinations",
+    sectionKey: "admin.sections.referenceData",
     labelKey: "admin.resources.destinations",
     idField: "stationCode",
     table: "rail_cost_destinations",
@@ -27,6 +29,7 @@ export const ADMIN_RESOURCES = [
   },
   {
     key: "rail-public-quotes",
+    sectionKey: "admin.sections.priceMaintenance",
     labelKey: "admin.resources.railPublicQuotes",
     idField: "id",
     table: "rail_cost_rail_public_quotes",
@@ -42,6 +45,7 @@ export const ADMIN_RESOURCES = [
   },
   {
     key: "rail-rules",
+    sectionKey: "admin.sections.priceMaintenance",
     labelKey: "admin.resources.railRules",
     idField: "id",
     table: "rail_cost_rail_rules",
@@ -62,6 +66,7 @@ export const ADMIN_RESOURCES = [
   },
   {
     key: "freight-prices",
+    sectionKey: "admin.sections.priceMaintenance",
     labelKey: "admin.resources.freightPrices",
     idField: "id",
     table: "rail_cost_freight_prices",
@@ -77,6 +82,7 @@ export const ADMIN_RESOURCES = [
   },
   {
     key: "lease-pickups",
+    sectionKey: "admin.sections.priceMaintenance",
     labelKey: "admin.resources.leasePickups",
     idField: "code",
     table: "rail_cost_lease_pickups",
@@ -90,6 +96,7 @@ export const ADMIN_RESOURCES = [
   },
   {
     key: "lease-prices",
+    sectionKey: "admin.sections.priceMaintenance",
     labelKey: "admin.resources.leasePrices",
     idField: "id",
     table: "rail_cost_lease_prices",
@@ -106,6 +113,7 @@ export const ADMIN_RESOURCES = [
   },
   {
     key: "lease-rules",
+    sectionKey: "admin.sections.priceMaintenance",
     labelKey: "admin.resources.leaseRules",
     idField: "id",
     table: "rail_cost_lease_rules",

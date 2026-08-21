@@ -1,4 +1,4 @@
-import { ADMIN_RESOURCES } from "./admin-model.js?v=20260813-rail-quote-rule-fallback";
+import { ADMIN_RESOURCES } from "./admin-model.js?v=20260821-price-maintenance";
 
 export function initAdminModule({ nav, table, form, title, status, newButton, t, fetchJson, onDataChanged, getCatalog }) {
   let currentResource = ADMIN_RESOURCES[0];
@@ -79,10 +79,7 @@ export function initAdminModule({ nav, table, form, title, status, newButton, t,
   }
 
   function renderNav() {
-    nav.innerHTML = ADMIN_RESOURCES.map(
-      (resource) =>
-        `<button type="button" class="${resource.key === currentResource.key ? "active" : ""}" data-resource="${resource.key}">${escapeHtml(t(resource.labelKey))}</button>`,
-    ).join("");
+    nav.innerHTML = renderAdminNav(ADMIN_RESOURCES, currentResource.key, t);
   }
 
   function renderTable() {
@@ -175,6 +172,35 @@ export function initAdminModule({ nav, table, form, title, status, newButton, t,
 
   renderLocale();
   return { load, renderLocale };
+}
+
+export function renderAdminNav(resources, currentKey, t) {
+  const sections = [];
+  for (const resource of resources) {
+    const sectionKey = resource.sectionKey || "admin.sections.uncategorized";
+    let section = sections.find((item) => item.key === sectionKey);
+    if (!section) {
+      section = { key: sectionKey, items: [] };
+      sections.push(section);
+    }
+    section.items.push(resource);
+  }
+  return sections
+    .map(
+      (section) => `
+        <div class="admin-nav-section">
+          <div class="admin-nav-section-title">${escapeHtml(t(section.key))}</div>
+          <div class="admin-nav-section-items">
+            ${section.items
+              .map(
+                (resource) =>
+                  `<button type="button" class="${resource.key === currentKey ? "active" : ""}" data-resource="${resource.key}">${escapeHtml(t(resource.labelKey))}</button>`,
+              )
+              .join("")}
+          </div>
+        </div>`,
+    )
+    .join("");
 }
 
 export function formatAdminValue(value, field, catalog = {}) {
