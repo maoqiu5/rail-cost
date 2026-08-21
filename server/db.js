@@ -300,14 +300,14 @@ export function listResourceRows(db, resourceKey) {
 
 export function createResourceRow(db, resourceKey, payload) {
   const resource = requireResource(resourceKey);
-  const row = cleanPayload(resource, payload, { creating: true });
+  const row = cleanPayload(db, resource, payload, { creating: true });
   insertOne(db, resource.table, row);
   return getResourceRow(db, resourceKey, row[resource.idField] ?? lastInsertId(db));
 }
 
 export function updateResourceRow(db, resourceKey, id, payload) {
   const resource = requireResource(resourceKey);
-  const row = cleanPayload(resource, { ...payload, [resource.idField]: id }, { creating: false });
+  const row = cleanPayload(db, resource, { ...payload, [resource.idField]: id }, { creating: false });
   const idField = resource.idField;
   const columns = Object.keys(row).filter((column) => column !== idField);
   const assignments = columns.map((column) => `${column} = @${column}`).join(", ");
@@ -350,7 +350,7 @@ function getResourceRow(db, resourceKey, id) {
   return row ? decodeRow(row) : null;
 }
 
-function cleanPayload(resource, payload, { creating }) {
+function cleanPayload(db, resource, payload, { creating }) {
   const allowedFields = resource.fields.filter((field) => !field.readonly || !creating);
   const row = {};
   for (const field of allowedFields) {
@@ -364,7 +364,7 @@ function cleanPayload(resource, payload, { creating }) {
       throw appError("invalid_field", 400, field.key);
     }
   }
-  validatePayload(resource, row);
+  validatePayload(db, resource, row);
   return row;
 }
 
@@ -394,7 +394,7 @@ function requireResource(resourceKey) {
   return resource;
 }
 
-function validatePayload(resource, row) {
+function validatePayload(db, resource, row) {
   for (const [key, value] of Object.entries(row)) {
     const field = resource.fields.find((item) => item.key === key);
     if (field?.type === "number" && value !== null && !Number.isFinite(value)) {
@@ -413,6 +413,15 @@ function validatePayload(resource, row) {
   }
   if ("borderCode" in row && row.borderCode && !["MANZHOULI", "ERLIAN"].includes(row.borderCode)) {
     throw appError("invalid_field", 400, "borderCode");
+  }
+  for (const field of resource.fields) {
+    if (!field.reference || !(field.key in row) || row[field.key] === null || row[field.key] === undefined || row[field.key] === "") continue;
+    const collection = referenceTableFor(field.reference.collection);
+    const exists = db.prepare(`select 1 from ${collection} where ${field.reference.valueKey} = ? limit 1`).get(row[field.key]);
+    if (!exists) throw appError("invalid_field", 400, field.key);
+  }
+  if (resource.key === "freight-prices" && (row.socPriceUsd < 0 || row.cocPriceUsd < 0)) {
+    throw appError("invalid_field", 400, row.socPriceUsd < 0 ? "socPriceUsd" : "cocPriceUsd");
   }
   if (resource.key === "lease-prices") {
     if (row.discountUsd < 0 || row.displayPriceUsd < 0 || row.displayPriceUsd !== row.priceUsd - row.discountUsd) {
@@ -486,6 +495,14 @@ function orderByFor(resource) {
   if (resource.idField === "id") return "id";
   if (resource.fields.some((field) => field.key === "sortOrder")) return `sortOrder, ${resource.idField}`;
   return resource.idField;
+}
+
+function referenceTableFor(collection) {
+  return {
+    borders: "rail_cost_borders",
+    destinations: "rail_cost_destinations",
+    leasePickups: "rail_cost_lease_pickups",
+  }[collection] || null;
 }
 
 function lastInsertId(db) {

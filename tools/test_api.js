@@ -96,6 +96,55 @@ try {
   assert.equal(invalidLeasePrice.status, 400);
   assert.equal(invalidLeasePrice.body.error, "invalid_lease_price");
 
+  const freightPrices = await jsonFetch(`${base}/api/admin/freight-prices`, {
+    headers: { "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
+  });
+  assert.equal(freightPrices.status, 200);
+  assert.equal(freightPrices.body.fields.some((field) => field.key === "socPriceUsd"), true);
+  assert.equal(freightPrices.body.fields.some((field) => field.key === "cocPriceUsd"), true);
+  const manzhouliVorsino40Freight = freightPrices.body.rows.find(
+    (row) => row.borderCode === "MANZHOULI" && row.destinationStationCode === "183502" && row.containerSize === "40",
+  );
+  assert.ok(manzhouliVorsino40Freight);
+  assert.equal(manzhouliVorsino40Freight.socPriceUsd, 3870);
+  assert.equal(manzhouliVorsino40Freight.cocPriceUsd, 3900);
+
+  const createdFreightPrice = await jsonFetch(`${base}/api/admin/freight-prices`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-BrianHub-User": "brian",
+      "X-BrianHub-Role": "admin",
+    },
+    body: JSON.stringify({
+      borderCode: "ERLIAN",
+      destinationStationCode: "145201",
+      containerSize: "40",
+      socPriceUsd: 4400,
+      cocPriceUsd: 4410,
+      enabled: true,
+    }),
+  });
+  assert.equal(createdFreightPrice.status, 201);
+  assert.equal(createdFreightPrice.body.row.socPriceUsd, 4400);
+
+  const invalidFreightPrice = await jsonFetch(`${base}/api/admin/freight-prices/${createdFreightPrice.body.row.id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-BrianHub-User": "brian",
+      "X-BrianHub-Role": "admin",
+    },
+    body: JSON.stringify({
+      ...createdFreightPrice.body.row,
+      socPriceUsd: -1,
+      cocPriceUsd: 4410,
+      enabled: true,
+    }),
+  });
+  assert.equal(invalidFreightPrice.status, 400);
+  assert.equal(invalidFreightPrice.body.error, "invalid_field");
+
   const railQuotes = await jsonFetch(`${base}/api/admin/rail-public-quotes`, {
     headers: { "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
   });

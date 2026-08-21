@@ -30,4 +30,25 @@ assert.match(fieldHtml, /<select name="destinationStationCode"/);
 assert.match(fieldHtml, /value="033004" selected/);
 assert.match(fieldHtml, /033004 \/ 舒沙雷 \/ Shushary-Logistika/);
 
+
+const freightBorderField = {
+  key: "borderCode",
+  type: "text",
+  required: true,
+  reference: { collection: "borders", valueKey: "code" },
+};
+
+const freightFieldHtml = renderAdminField({
+  field: freightBorderField,
+  value: "MANZHOULI",
+  editingRow: { id: 1 },
+  currentIdField: "id",
+  catalog,
+  t: (key) => key,
+});
+
+assert.match(freightFieldHtml, /<select name="borderCode"/);
+assert.match(freightFieldHtml, /value="MANZHOULI" selected/);
+assert.match(freightFieldHtml, /MANZHOULI \/ 满洲里 \/ Manzhouli/);
+
 console.log("admin display tests passed");

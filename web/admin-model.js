@@ -61,6 +61,21 @@ export const ADMIN_RESOURCES = [
     ],
   },
   {
+    key: "freight-prices",
+    labelKey: "admin.resources.freightPrices",
+    idField: "id",
+    table: "rail_cost_freight_prices",
+    fields: [
+      { key: "id", type: "number", readonly: true },
+      { key: "borderCode", type: "text", required: true, reference: { collection: "borders", valueKey: "code" } },
+      { key: "destinationStationCode", type: "text", required: true, reference: { collection: "destinations", valueKey: "stationCode" } },
+      { key: "containerSize", type: "text", required: true },
+      { key: "socPriceUsd", type: "number", required: true },
+      { key: "cocPriceUsd", type: "number", required: true },
+      { key: "enabled", type: "boolean", required: true },
+    ],
+  },
+  {
     key: "lease-pickups",
     labelKey: "admin.resources.leasePickups",
     idField: "code",
