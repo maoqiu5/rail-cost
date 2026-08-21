@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { formatAdminValue, renderAdminField } from "../web/admin.js";
 
 const catalog = {
@@ -50,5 +51,10 @@ const freightFieldHtml = renderAdminField({
 assert.match(freightFieldHtml, /<select name="borderCode"/);
 assert.match(freightFieldHtml, /value="MANZHOULI" selected/);
 assert.match(freightFieldHtml, /MANZHOULI \/ 满洲里 \/ Manzhouli/);
+
+
+const adminSource = readFileSync(new URL("../web/admin.js", import.meta.url), "utf8");
+assert.match(adminSource, /editingRow\?\.\[field\.key\]/, "readonly edit fields should be preserved in the save payload");
+assert.match(adminSource, /currentResource\.key === "lease-prices"/, "lease price rows should not expose manual creation from the generic form");
 
 console.log("admin display tests passed");

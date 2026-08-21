@@ -96,6 +96,22 @@ try {
   assert.equal(invalidLeasePrice.status, 400);
   assert.equal(invalidLeasePrice.body.error, "invalid_lease_price");
 
+  const negativeLeaseDiscount = await jsonFetch(base + "/api/admin/lease-prices/" + taicangPrice.id, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
+    body: JSON.stringify({ ...taicangPrice, discountUsd: -1, displayPriceUsd: 2301, enabled: true }),
+  });
+  assert.equal(negativeLeaseDiscount.status, 400);
+  assert.equal(negativeLeaseDiscount.body.error, "invalid_lease_price");
+
+  const negativeLeaseDisplayPrice = await jsonFetch(base + "/api/admin/lease-prices/" + taicangPrice.id, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
+    body: JSON.stringify({ ...taicangPrice, discountUsd: 2301, displayPriceUsd: -1, enabled: true }),
+  });
+  assert.equal(negativeLeaseDisplayPrice.status, 400);
+  assert.equal(negativeLeaseDisplayPrice.body.error, "invalid_lease_price");
+
   const freightPrices = await jsonFetch(`${base}/api/admin/freight-prices`, {
     headers: { "X-BrianHub-User": "brian", "X-BrianHub-Role": "admin" },
   });
