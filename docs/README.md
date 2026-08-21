@@ -14,3 +14,9 @@ Rail Cost is a standalone BrianHub project for overseas rail cost lookup, TC con
 - Business data is stored in the dedicated rail-cost SQLite database.
 - Original PDFs stay in `web/data/` and must not be committed.
 - Database files under `data/` are runtime state and must not be committed.
+
+## Price Maintenance
+
+- `rail_cost_freight_prices`: final rail freight prices by border, destination station, and container size.
+- `rail_cost_lease_prices`: final lease prices by border, pickup location, and container size.
+- Admin users maintain final prices directly; query pages read only the final price tables.

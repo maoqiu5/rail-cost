@@ -62,7 +62,7 @@ Do not commit these files:
 
 ## Local Verification
 
-Use the bundled or system Node.js 24+ runtime:
+Use the bundled or system Node.js 24+ runtime. Run SQLite-dependent checks in a Node 24 container or runtime; host Node 18 on the VPS cannot load `node:sqlite`:
 
 ```bash
 node --disable-warning=ExperimentalWarning tools/test_db.js
