@@ -4,7 +4,7 @@
 
 - Project slug: `rail-cost`
 - Production path: `https://brianhub.net/rail-cost/`
-- Local repo: `C:\Users\12514\Documents\rail-cost`
+- Local repo: `D:\codex\rail-cost`
 - VPS directory: `/root/apps/rail-cost`
 - Web directory: `/root/apps/rail-cost/web`
 - Runtime database: `/root/apps/rail-cost/data/rail-cost.db`
@@ -23,6 +23,45 @@ Rail Cost is a small Node.js service using the built-in `node:sqlite` module. Th
 - Admin-only `GET/POST/PUT/DELETE /api/admin/:resource`.
 
 The app listens on port `8036`. In Docker it must use `HOST=0.0.0.0` and join the shared `brianhub_edge` network so the BrianHub gateway container can reach it at `rail-cost:8036`. Public `80/443` traffic stays with the BrianHub gateway.
+
+## Current VPS Deployment (Confirmed 2026-08-25)
+
+The production `/root/apps/rail-cost` currently runs as a **manually created Docker container** (no Compose/Dockerfile in the project). Confirmed container details:
+
+- Container name: `rail-cost`
+- Image: `node:24-bookworm` (Node 24)
+- Working directory: `/app`
+- Command: `node server/app.js`
+- Network: `brianhub_edge` (container address `rail-cost:8036`)
+- Mounts:
+  - `/root/apps/rail-cost:/app`
+  - `/root/apps/rail-cost/data:/app/data`
+- Environment: `PORT=8036`, `HOST=0.0.0.0`
+- Restart policy: `unless-stopped`
+- No host port mapping; only reachable through the BrianHub gateway on the shared network
+
+Equivalent `docker run` command for recreating the container:
+
+```bash
+docker run -d \
+  --name rail-cost \
+  --network brianhub_edge \
+  --restart unless-stopped \
+  -w /app \
+  -e PORT=8036 \
+  -e HOST=0.0.0.0 \
+  -v /root/apps/rail-cost:/app \
+  -v /root/apps/rail-cost/data:/app/data \
+  node:24-bookworm \
+  node server/app.js
+```
+
+Health check inside the container:
+
+```bash
+docker exec rail-cost curl -fsS http://127.0.0.1:8036/health
+# {"ok":true}
+```
 
 ## BrianHub Headers
 
@@ -69,6 +108,7 @@ node --disable-warning=ExperimentalWarning tools/test_db.js
 node --disable-warning=ExperimentalWarning tools/test_api.js
 node tools/test_i18n.js
 node --disable-warning=ExperimentalWarning tools/test_calculator.js
+node tools/test_admin_display.js
 node tools/test_html_smoke.js
 ```
 
@@ -86,19 +126,19 @@ Open `http://127.0.0.1:8036/rail-cost/`.
 2. Commit and push to GitHub.
 3. On the VPS, pull the GitHub commit into `/root/apps/rail-cost`.
 4. Preserve `/root/apps/rail-cost/web/data/` and `/root/apps/rail-cost/data/`.
-5. Start or restart the rail-cost Node service on `127.0.0.1:8036`.
+5. Restart or recreate the Docker container: `docker restart rail-cost` (if code changed in a bind-mounted directory, a restart is enough; if container metadata needs updating, recreate with the `docker run` command above).
 6. Ensure the BrianHub gateway proxies `/rail-cost/*` to `rail-cost:8036` and forwards the BrianHub headers.
 7. Verify:
 
 ```bash
-curl -fsS http://127.0.0.1:8036/health
+docker exec rail-cost curl -fsS http://127.0.0.1:8036/health
 curl -fsS https://brianhub.net/rail-cost/ >/dev/null
 curl -fsS https://brianhub.net/rail-cost/api/query/bootstrap >/dev/null
 ```
 
 ## Rollback
 
-- Code rollback: restore the previous Git commit and restart the service.
+- Code rollback: restore the previous Git commit and restart the Docker container (`docker restart rail-cost`).
 - Database rollback: restore `/root/apps/rail-cost/data/rail-cost.db` from backup.
 - PDF rollback: restore the previous files under `/root/apps/rail-cost/web/data/`.
 - Gateway rollback: restore the previous BrianHub gateway config and reload it.
