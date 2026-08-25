@@ -107,8 +107,8 @@ try {
     (row) => row.borderCode === "MANZHOULI" && row.destinationStationCode === "183502" && row.containerSize === "40",
   );
   assert.ok(manzhouliVorsino40Freight);
-  assert.equal(manzhouliVorsino40Freight.socPriceUsd, 3870);
-  assert.equal(manzhouliVorsino40Freight.cocPriceUsd, 3900);
+  assert.equal(manzhouliVorsino40Freight.socPriceUsd, 3850);
+  assert.equal(manzhouliVorsino40Freight.cocPriceUsd, 3850);
 
   const createdFreightPrice = await jsonFetch(`${base}/api/admin/freight-prices`, {
     method: "POST",

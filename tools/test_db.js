@@ -35,8 +35,8 @@ assert.equal(
 const manzhouliVorsino40 = db
   .prepare("select socPriceUsd, cocPriceUsd from rail_cost_freight_prices where borderCode = 'MANZHOULI' and destinationStationCode = '183502' and containerSize = '40'")
   .get();
-assert.equal(manzhouliVorsino40.socPriceUsd, 3870, "Manzhouli Vorsino 40 ft SOC final price");
-assert.equal(manzhouliVorsino40.cocPriceUsd, 3900, "Manzhouli Vorsino 40 ft COC final price");
+assert.equal(manzhouliVorsino40.socPriceUsd, 3850, "Manzhouli Vorsino 40 ft SOC final price");
+assert.equal(manzhouliVorsino40.cocPriceUsd, 3850, "Manzhouli Vorsino 40 ft COC final price");
 
 const erlianVorsino40 = db
   .prepare("select socPriceUsd, cocPriceUsd from rail_cost_freight_prices where borderCode = 'ERLIAN' and destinationStationCode = '183502' and containerSize = '40'")

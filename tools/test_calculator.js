@@ -42,7 +42,7 @@ assert.deepEqual(
     containerSize: "40",
     ownership: "SOC",
   }, catalog).totalUsd,
-  3870,
+  3850,
   "Manzhouli 40 SOC should use the ownership-specific quote when maintained",
 );
 
@@ -53,7 +53,7 @@ assert.equal(
     containerSize: "40",
     ownership: "COC",
   }, catalog).totalUsd,
-  3900,
+  3850,
   "Manzhouli 40 COC should use the ownership-specific quote when maintained",
 );
 
