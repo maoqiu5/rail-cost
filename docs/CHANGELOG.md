@@ -1,5 +1,16 @@
 # Rail Cost Changelog
 
+## 2026-11-25
+
+- Added admin-only quote upload page.
+- Added PDF quote parser for agent quote sheets.
+- Added XLSX quote parser and downloadable XLSX template.
+- Added `POST /api/quotes/import`, `GET /api/quotes/imports`, and `GET /api/quotes/template.xlsx`.
+- Added `rail_cost_quote_imports` import history table.
+- Uploaded source files are stored under `data/imports/<agentCode>/`.
+- Uploading a quote replaces the selected agent's current rail quotes.
+- Added `pdfjs-dist` and `xlsx` runtime dependencies.
+
 ## 2026-11-02
 
 - Imported the TC `TOP客户-全铁公共报价单2026.11.01.pdf` quote for 2026-11-01 to 2026-11-30.

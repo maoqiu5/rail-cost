@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ensureSchema, loadQueryData, openDatabase, seedDatabase } from "../server/db.js";
+import { ensureSchema, importAgentQuotes, listQuoteImports, loadQueryData, openDatabase, seedDatabase } from "../server/db.js";
 
 const dir = mkdtempSync(join(tmpdir(), "rail-cost-db-"));
 const db = openDatabase(join(dir, "rail-cost.db"));
@@ -43,5 +43,22 @@ assert.equal(queryData.railPublicQuotes.some((row) => row.agentCode === "TC" && 
 assert.equal(queryData.leasePrices.length, 0);
 assert.equal("freightPrices" in queryData, false, "legacy freight price table should not be exposed");
 assert.equal("railRules" in queryData, false, "legacy rail rules should not be exposed");
+
+const imported = importAgentQuotes(db, {
+  agentCode: "TC",
+  sourceType: "xlsx",
+  fileName: "manual.xlsx",
+  effectiveFrom: "2026-12-01",
+  effectiveTo: "2026-12-31",
+  quotes: [
+    { borderCode: "MANZHOULI", destinationStationCode: "183502", containerSize: "40", ownership: "COC", quoteUsd: 3999, enabled: true },
+    { borderCode: "MANZHOULI", destinationStationCode: "183502", containerSize: "40", ownership: "SOC", quoteUsd: 3998, enabled: true },
+  ],
+  importedBy: "brian",
+});
+assert.equal(imported.quoteCount, 2);
+assert.equal(imported.effectiveFrom, "2026-12-01");
+assert.equal(listQuoteImports(db).length, 1);
+assert.equal(db.prepare("select count(1) as c from rail_cost_rail_public_quotes where agentCode = 'TC'").get().c, 2, "uploading an agent quote should replace that agent's existing quotes");
 
 console.log("database tests passed");

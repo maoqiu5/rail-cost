@@ -2,8 +2,9 @@ import {
   calculateRailCost,
   calculateLeaseCost,
   findRailDestinationFromInput,
-} from "./calculator.js?v=20261102-agent-quotes";
-import { localeCookieString, resolveInitialLocale, t } from "./i18n.js?v=20261102-agent-quotes";
+} from "./calculator.js?v=20261125-quote-upload";
+import { localeCookieString, resolveInitialLocale, t } from "./i18n.js?v=20261125-quote-upload";
+import { initUploadModule } from "./upload.js?v=20261125-quote-upload";
 
 const railDestinationInput = document.querySelector("#railDestination");
 const railDestinationOptions = document.querySelector("#railDestinationOptions");
@@ -13,6 +14,10 @@ const railResult = document.querySelector("#railResult");
 const leaseResult = document.querySelector("#leaseResult");
 const pickupInput = document.querySelector("#pickup");
 const localeSwitch = document.querySelector("#localeSwitch");
+const railNav = document.querySelector("#railNav");
+const uploadNav = document.querySelector("#uploadNav");
+const queryView = document.querySelector("#queryView");
+const uploadView = document.querySelector("#uploadView");
 
 let currentLocale = resolveInitialLocale({
   headerLocale: document.documentElement.dataset.bhHeaderLocale,
@@ -21,6 +26,7 @@ let currentLocale = resolveInitialLocale({
 let catalog = emptyCatalog();
 let lastRailData = null;
 let lastLeaseData = null;
+let uploadModule = null;
 
 function optionLabel(item) {
   return `${item.nameCn} / ${item.nameEn} / ${item.stationCode}`;
@@ -122,7 +128,22 @@ function setLocale(locale, { persist }) {
   renderEmptyResults();
   if (lastRailData) renderRail(lastRailData);
   if (lastLeaseData) renderLease(lastLeaseData);
+  uploadModule?.refreshHistory();
 }
+
+function showView(view) {
+  const uploadSelected = view === "upload";
+  queryView.hidden = uploadSelected;
+  uploadView.hidden = !uploadSelected;
+  railNav.classList.toggle("active", !uploadSelected);
+  uploadNav.classList.toggle("active", uploadSelected);
+  railNav.setAttribute("aria-current", uploadSelected ? "false" : "page");
+  uploadNav.setAttribute("aria-current", uploadSelected ? "page" : "false");
+  if (uploadSelected) uploadModule?.refreshHistory();
+}
+
+railNav.addEventListener("click", () => showView("query"));
+uploadNav.addEventListener("click", () => showView("upload"));
 
 railDestinationInput.addEventListener("focus", () => showDestinationOptions({ filter: false }));
 railDestinationInput.addEventListener("click", () => showDestinationOptions({ filter: false }));
@@ -217,23 +238,48 @@ function signed(value) {
   return `${value > 0 ? "+" : ""}$${usd(value)}`;
 }
 
+async function fetchJson(path, options) {
+  const response = await fetch(path, options);
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.message || body.error || `HTTP ${response.status}`);
+  return body;
+}
+
 async function loadCatalog() {
-  const response = await fetch("./api/query/bootstrap");
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  catalog = await response.json();
+  catalog = await fetchJson("./api/query/bootstrap");
   renderAgentSelects();
   renderBorderSelects();
   renderPickupList();
 }
 
 async function init() {
+  const me = await fetch("./api/me")
+    .then((response) => (response.ok ? response.json() : { isAdmin: false }))
+    .catch(() => ({ isAdmin: false }));
+  uploadNav.hidden = !me.isAdmin;
+
   await loadCatalog().catch(() => {
     railResult.innerHTML = `<p class="empty">${t(currentLocale, "app.loadError")}</p>`;
     leaseResult.innerHTML = `<p class="empty">${t(currentLocale, "app.loadError")}</p>`;
   });
 
+  if (me.isAdmin) {
+    uploadModule = initUploadModule({
+      form: document.querySelector("#uploadForm"),
+      fileInput: document.querySelector("#uploadFile"),
+      status: document.querySelector("#uploadStatus"),
+      result: document.querySelector("#uploadResult"),
+      history: document.querySelector("#uploadHistory"),
+      t: (key, params) => t(currentLocale, key, params),
+      fetchJson,
+      onImported: loadCatalog,
+    });
+    await uploadModule.refreshHistory();
+  }
+
   renderStaticText();
   renderEmptyResults();
+  showView("query");
 }
 
 function emptyCatalog() {

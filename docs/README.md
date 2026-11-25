@@ -1,4 +1,4 @@
-﻿# Rail Cost Docs
+# Rail Cost Docs
 
 Rail Cost is a standalone BrianHub project for overseas rail freight quote lookup by agent, transshipment border, destination station, container size, and SOC/COC ownership.
 
@@ -23,3 +23,12 @@ Rail Cost is a standalone BrianHub project for overseas rail freight quote looku
 - TC November 2026 quote data is imported under agent `TC`.
 - COC prices represent the COC freight portion only and do not include container lease fees.
 - Container lease prices are currently empty because containers are in short supply.
+
+## Quote Upload
+
+- Admin users can open the **Quote Upload** page from the left navigation.
+- Supported uploads: agent PDF quote sheets and manually filled XLSX quote sheets.
+- A PDF upload replaces the selected agent's current rail quotes using the parsed border, destination, container size, ownership, and USD amount.
+- An XLSX upload uses the downloadable template with columns `agentCode`, `borderCode`, `destinationStationCode`, `containerSize`, `ownership`, `quoteUsd`, `effectiveFrom`, `effectiveTo`, and `enabled`.
+- Uploaded source files are stored under `data/imports/<agentCode>/` (runtime data, not committed).
+- Import history is stored in `rail_cost_quote_imports` and shown on the upload page.

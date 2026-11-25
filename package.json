@@ -1,11 +1,15 @@
-﻿{
+{
   "name": "rail-cost",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --disable-warning=ExperimentalWarning tools/test_db.js && node --disable-warning=ExperimentalWarning tools/test_api.js && node tools/test_i18n.js && node --disable-warning=ExperimentalWarning tools/test_calculator.js && node tools/test_html_smoke.js",
+    "test": "node --disable-warning=ExperimentalWarning tools/test_db.js && node --disable-warning=ExperimentalWarning tools/test_api.js && node tools/test_i18n.js && node --disable-warning=ExperimentalWarning tools/test_calculator.js && node --disable-warning=ExperimentalWarning tools/test_import.js && node tools/test_html_smoke.js",
     "start": "node --disable-warning=ExperimentalWarning server/app.js",
     "serve": "node --disable-warning=ExperimentalWarning server/app.js"
+  },
+  "dependencies": {
+    "pdfjs-dist": "5.6.205",
+    "xlsx": "0.18.5"
   }
 }

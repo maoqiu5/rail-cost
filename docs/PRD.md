@@ -1,4 +1,4 @@
-﻿# Rail Cost PRD
+# Rail Cost PRD
 
 ## Project Goal
 
@@ -19,6 +19,11 @@ Provide a standalone lightweight internal page for querying overseas rail freigh
 - COC prices represent the COC freight portion only and exclude container lease fees.
 - BrianHub bilingual UI support for `zh-CN` and `en-US`.
 - Source quote PDF download entry.
+- Admin-only quote upload page for agent PDF quote sheets.
+- Admin-only quote upload page for manually filled XLSX quote sheets.
+- Downloadable XLSX quote template with reference sheets.
+- Import history with agent, source type, file name, quote period, and row count.
+- Uploaded source files saved under `data/imports/<agentCode>/`.
 
 ## Removed Features
 
@@ -28,10 +33,9 @@ Provide a standalone lightweight internal page for querying overseas rail freigh
 
 ## Planned Features
 
-- Upload and import agent quote PDFs.
-- Upload and import manually filled XLSX quote sheets.
 - Support additional agents and quote versions without code changes.
 - Import container lease quotes when containers become available again.
+- Automatically parse more agent-specific PDF layouts.
 
 ## BrianHub Locale Rules
 
@@ -65,6 +69,7 @@ Provide a standalone lightweight internal page for querying overseas rail freigh
 
 - Only the TC November 2026 quote is currently imported; BA, FESCO, and LOA quotes are not yet imported.
 - Container lease prices are empty because containers are in short supply.
-- Quote imports are currently code/data driven; PDF/XLSX upload is the next planned step.
+- PDF/XLSX quote uploads are implemented for admin users; additional agent PDF layouts may need parser adaptation.
+- Uploaded source files are stored under `data/imports/<agentCode>/` and must not be committed.
 - Files under `web/data/` are sensitive business materials and must not enter GitHub or a public repository.
 - Database files are runtime state and must not enter GitHub.

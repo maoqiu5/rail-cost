@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   color-scheme: light;
   --bg: #f5f7fb;
   --panel: #fff;
@@ -58,6 +58,19 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px r
 .metric span, .total span { color: var(--muted); }
 .total { align-items: center; border-top: 1px solid var(--line); margin-top: 4px; padding-top: 12px; }
 .total strong { color: var(--accent-dark); font-size: 26px; }
+.upload-panel { max-width: 980px; }
+.upload-status { min-height: 20px; margin-top: 14px; color: var(--ok); font-size: 13px; font-weight: 700; }
+.upload-status.error { color: var(--danger); }
+.upload-history { margin-top: 20px; }
+.upload-history h3 { margin-bottom: 10px; }
+.history-wrap { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.history-table th, .history-table td { border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; padding: 9px 10px; }
+.history-table th { color: var(--muted); background: #f8fafc; font-weight: 700; white-space: nowrap; }
+.history-table tr:last-child td { border-bottom: 0; }
+.template-link-row { margin-top: 12px; }
+.text-link { color: var(--accent); font-weight: 700; text-decoration: none; }
+.text-link:hover { color: var(--accent-dark); text-decoration: underline; }
 
 @media (max-width: 980px) {
   .app-shell { grid-template-columns: 1fr; }

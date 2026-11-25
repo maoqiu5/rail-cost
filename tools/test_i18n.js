@@ -1,4 +1,4 @@
-﻿import assert from "node:assert/strict";
+import assert from "node:assert/strict";
 import {
   SUPPORTED_LOCALES,
   TRANSLATIONS,
@@ -62,7 +62,10 @@ assert.equal(t("zh-CN", "rail.submit"), "查询运费");
 assert.equal(t("fr-FR", "rail.submit"), "Calculate rail cost");
 assert.equal(t("zh-CN", "error.lease.noContainer"), "当前缺箱，暂无租箱报价。");
 
+assert.equal(t("zh-CN", "upload.success", { agent: "TC", count: 40 }), "已为 TC 导入 40 条报价。");
+
 for (const key of [
+  "nav.upload",
   "rail.agent",
   "rail.result.agent",
   "lease.agent",
@@ -71,6 +74,15 @@ for (const key of [
   "error.lease.noContainer",
   "rule.rail.importedQuote",
   "rule.lease.importedQuote",
+  "upload.title",
+  "upload.agent",
+  "upload.file",
+  "upload.submit",
+  "upload.template",
+  "upload.importing",
+  "upload.success",
+  "upload.error.import",
+  "upload.history.title",
 ]) {
   assert.equal(typeof TRANSLATIONS["en-US"][key], "string", `en-US missing key: ${key}`);
   assert.equal(typeof TRANSLATIONS["zh-CN"][key], "string", `zh-CN missing key: ${key}`);

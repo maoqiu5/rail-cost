@@ -1,10 +1,10 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en-US" data-bh-header-locale='{{placeholder "http.request.header.X-BrianHub-Locale"}}'>
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Rail Cost Desk</title>
-    <link rel="stylesheet" href="./styles.css?v=20261102-agent-quotes">
+    <link rel="stylesheet" href="./styles.css?v=20261125-quote-upload">
   </head>
   <body>
     <main class="app-shell">
@@ -15,6 +15,7 @@
         </div>
         <nav class="main-nav" aria-label="Sections">
           <button id="railNav" type="button" class="active" data-i18n="nav.query">Query</button>
+          <button id="uploadNav" type="button" data-i18n="nav.upload" hidden>Quote Upload</button>
         </nav>
       </aside>
 
@@ -103,8 +104,34 @@
             </article>
           </div>
         </section>
+
+        <section id="uploadView" class="view" hidden>
+          <article class="panel upload-panel">
+            <div class="panel-heading">
+              <h2 data-i18n="upload.title">Quote Upload</h2>
+              <p data-i18n="upload.description">Upload an agent PDF quote or a manually filled XLSX quote. The uploaded quote replaces the current quotes for the selected agent.</p>
+            </div>
+            <form id="uploadForm" class="form">
+              <label>
+                <span data-i18n="upload.agent">Agent</span>
+                <select name="agent" data-agent-select></select>
+              </label>
+              <label>
+                <span data-i18n="upload.file">Quote file</span>
+                <input id="uploadFile" name="file" type="file" accept=".pdf,.xlsx" required>
+              </label>
+              <button type="submit" data-i18n="upload.submit">Import quote</button>
+            </form>
+            <p id="uploadStatus" class="upload-status" aria-live="polite"></p>
+            <div id="uploadResult" class="result"></div>
+            <p class="template-link-row">
+              <a id="templateLink" class="text-link" href="./api/quotes/template.xlsx" download data-i18n="upload.template">Download XLSX template</a>
+            </p>
+            <div id="uploadHistory" class="upload-history"></div>
+          </article>
+        </section>
       </section>
     </main>
-    <script type="module" src="./app.js?v=20261102-agent-quotes"></script>
+    <script type="module" src="./app.js?v=20261125-quote-upload"></script>
   </body>
 </html>

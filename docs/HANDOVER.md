@@ -1,4 +1,4 @@
-﻿# Rail Cost 项目交接说明
+# Rail Cost 项目交接说明
 
 > 更新时间：2026-11-02
 > 接手原则：**VPS `/root/apps/rail-cost` 是当前最新生产事实；本地 `D:\codex\rail-cost` 已同步到当前源码。**
@@ -21,7 +21,9 @@ Rail Cost 是 BrianHub 下的独立内部工具，用于按代理、换装口岸
 - 已支持代理：`TC`、`BA`、`FESCO`、`LOA`
 - 租箱费：空（缺箱）
 - 数据维护功能：已删除（页面、`/api/admin/*`、测试和文案均已移除）
-- 下一步：报价单 PDF 上传、人工填写 XLSX 报价单上传读取
+- 报价上传：已实现（PDF 报价单 + 人工填写 XLSX 报价单）
+- 上传权限：仅 `X-BrianHub-Role` 包含 `admin` 的用户可见/可用
+- 上传记录：写入 `rail_cost_quote_imports`，上传原文件保存到 `data/imports/<agentCode>/`
 
 ### VPS 实际运行方式（已确认）
 
@@ -46,12 +48,14 @@ Rail Cost 是 BrianHub 下的独立内部工具，用于按代理、换装口岸
 ```text
 rail-cost/
 ├── server/
-│   ├── app.js          # HTTP 服务：静态页 + health + bootstrap API
+│   ├── app.js          # HTTP 服务：静态页 + health + bootstrap + 上传 API
 │   ├── db.js           # SQLite 建表、迁移、报价导入、查询数据加载
+│   ├── quote-import.js # PDF/XLSX 解析与 XLSX 模板生成
 │   └── seed.js         # 代理、口岸、目的站、TC 2026.11 报价数据
 ├── web/
-│   ├── index.html      # 查询页
-│   ├── app.js          # 页面逻辑：代理/口岸/目的站/箱型/箱属查询
+│   ├── index.html      # 查询页 + 报价上传页
+│   ├── app.js          # 页面逻辑：查询、权限、视图切换
+│   ├── upload.js       # 报价上传与导入记录
 │   ├── calculator.js   # 报价匹配逻辑
 │   ├── i18n.js
 │   ├── styles.css
@@ -76,12 +80,15 @@ rail-cost/
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/health` | 健康检查 |
+| GET | `/api/me` | 返回当前用户、角色、是否管理员、语言 |
 | GET | `/api/query/bootstrap` | 返回代理、口岸、目的站、报价、提箱地和租箱价 |
+| GET | `/api/quotes/template.xlsx` | 下载 XLSX 报价模板（仅管理员） |
+| GET | `/api/quotes/imports` | 查看最近导入记录（仅管理员） |
+| POST | `/api/quotes/import` | 上传并导入 PDF/XLSX 报价（仅管理员） |
 
 已删除：
 
 - `GET/POST/PUT/DELETE /api/admin/:resource`
-- `GET /api/me`（仅数据维护页面使用，已随功能移除）
 
 ---
 
@@ -95,6 +102,7 @@ rail-cost/
 - `rail_cost_rail_public_quotes`：代理铁路运费报价（含 `agentCode`、COC/SOC、箱型）
 - `rail_cost_lease_pickups`：提箱地（预留）
 - `rail_cost_lease_prices`：租箱价（当前为空）
+- `rail_cost_quote_imports`：报价导入记录（代理、来源、文件、期间、条数、上传人）
 - `rail_cost_meta`：元数据（含 `quote_data_version`）
 
 旧数据维护相关表可能仍存在于历史数据库中，但当前代码不再读写：
@@ -118,6 +126,14 @@ rail-cost/
 - 二连 20 尺报价单中无数据，查询时提示暂无报价
 - 新增目的站：Kupavna（230506）、Kresty（181403）
 
+### 上传导入
+
+- 管理员登录后左侧会出现“报价上传”。
+- PDF：选择代理并上传代理报价单，解析 `接驳口岸`、`站编`、`COC`、`SOC` 行，按 `$` 金额导入；`-` 视为无报价。
+- XLSX：下载模板后按列填写，上传后按 `agentCode / borderCode / destinationStationCode / containerSize / ownership / quoteUsd` 导入。
+- 上传会替换所选代理当前的报价（不会影响其他代理）。
+- 上传原文件保存到 `data/imports/<agentCode>/`，导入记录写入 `rail_cost_quote_imports`。
+
 ---
 
 ## 7. 本地命令
@@ -132,6 +148,7 @@ Set-Location 'D:\codex\rail-cost'
 & $node --disable-warning=ExperimentalWarning tools/test_api.js
 & $node tools/test_i18n.js
 & $node --disable-warning=ExperimentalWarning tools/test_calculator.js
+& $node --disable-warning=ExperimentalWarning tools/test_import.js
 & $node tools/test_html_smoke.js
 ```
 
@@ -190,11 +207,14 @@ docker restart rail-cost
 - [x] 多代理维度已加入数据库和查询页
 - [x] TC 2026.11 报价已导入
 - [x] 租箱费已清空并显示缺箱提示
+- [x] PDF 报价单上传功能已实现
+- [x] 人工填写 XLSX 报价单上传读取已实现
+- [x] 上传原文件保存到 `data/imports/`
+- [x] 导入记录写入 `rail_cost_quote_imports`
 - [ ] BA / FESCO / LOA 报价尚未导入
-- [ ] PDF 报价单上传功能尚未实现
-- [ ] 人工填写 XLSX 报价单上传读取尚未实现
 - [ ] 历史数据库中旧的维护表尚未物理删除，仅停止使用
-- [ ] 月度报价更新目前仍依赖代码中的 seed 数据
+- [ ] 当前 TC 初始数据仍来自代码中的 seed 数据；后续应改为上传驱动
+- [ ] 更多代理的 PDF 版式可能需要单独适配
 - [ ] `web/data/` 下的 PDF 是敏感业务材料，不能进 Git
 
 ---

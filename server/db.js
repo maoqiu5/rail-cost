@@ -1,4 +1,4 @@
-﻿import { DatabaseSync } from "node:sqlite";
+import { DatabaseSync } from "node:sqlite";
 import { dirname, join } from "node:path";
 import { mkdirSync } from "node:fs";
 import { buildSeedRows, QUOTE_DATA_VERSION } from "./seed.js";
@@ -74,6 +74,18 @@ export function ensureSchema(db) {
       enabled integer not null default 1,
       unique (agentCode, borderCode, pickupCode, containerSize)
     );
+
+    create table if not exists rail_cost_quote_imports (
+      id integer primary key,
+      agentCode text not null,
+      sourceType text not null,
+      fileName text not null,
+      effectiveFrom text not null default '',
+      effectiveTo text not null default '',
+      quoteCount integer not null,
+      importedBy text not null default '',
+      importedAt text not null default (datetime('now'))
+    );
   `);
   migrateRailPublicQuotes(db);
   migrateLeasePrices(db);
@@ -100,6 +112,76 @@ export function loadQueryData(db) {
     leasePickups: selectEnabled(db, "rail_cost_lease_pickups", "sortOrder, code"),
     leasePrices: selectEnabled(db, "rail_cost_lease_prices", "agentCode, borderCode, pickupCode, containerSize"),
   };
+}
+
+export function listQuoteImports(db, limit = 20) {
+  const safeLimit = Math.max(1, Math.min(100, Number(limit) || 20));
+  return db
+    .prepare("select id, agentCode, sourceType, fileName, effectiveFrom, effectiveTo, quoteCount, importedBy, importedAt from rail_cost_quote_imports order by id desc limit ?")
+    .all(safeLimit)
+    .map((row) => ({ ...row }));
+}
+
+export function importAgentQuotes(db, { agentCode, sourceType, fileName, effectiveFrom = "", effectiveTo = "", quotes, importedBy = "" }) {
+  const normalizedAgent = String(agentCode || "").trim().toUpperCase();
+  const agent = db.prepare("select code from rail_cost_agents where code = ? and enabled = 1").get(normalizedAgent);
+  if (!agent) throw importError("unknown_agent", `Unknown agent: ${normalizedAgent}`);
+
+  if (!["pdf", "xlsx"].includes(sourceType)) throw importError("invalid_source_type", "Only PDF and XLSX imports are supported.");
+  if (!Array.isArray(quotes) || !quotes.length) throw importError("empty_quotes", "The uploaded quote file contains no quote rows.");
+
+  const borders = new Set(db.prepare("select code from rail_cost_borders where enabled = 1").all().map((row) => row.code));
+  const destinations = new Set(db.prepare("select stationCode from rail_cost_destinations where enabled = 1").all().map((row) => row.stationCode));
+  const deduped = new Map();
+
+  for (const quote of quotes) {
+    const row = {
+      agentCode: normalizedAgent,
+      borderCode: String(quote.borderCode || "").trim().toUpperCase(),
+      destinationStationCode: String(quote.destinationStationCode || "").trim(),
+      containerSize: String(quote.containerSize || "").trim(),
+      ownership: String(quote.ownership || "").trim().toUpperCase(),
+      quoteUsd: Number(quote.quoteUsd),
+      enabled: quote.enabled === false ? 0 : 1,
+    };
+    if (!borders.has(row.borderCode)) throw importError("invalid_border", `Unknown border: ${row.borderCode}`);
+    if (!destinations.has(row.destinationStationCode)) throw importError("invalid_destination", `Unknown destination: ${row.destinationStationCode}`);
+    if (!["20", "40"].includes(row.containerSize)) throw importError("invalid_container_size", `Invalid container size: ${row.containerSize}`);
+    if (!["COC", "SOC"].includes(row.ownership)) throw importError("invalid_ownership", `Invalid ownership: ${row.ownership}`);
+    if (!Number.isFinite(row.quoteUsd) || row.quoteUsd < 0) throw importError("invalid_quote", "Quote amount must be a non-negative number.");
+    deduped.set(`${row.borderCode}|${row.destinationStationCode}|${row.containerSize}|${row.ownership}`, row);
+  }
+
+  const rows = [...deduped.values()];
+  const safeFileName = String(fileName || "upload").slice(0, 500);
+  db.exec("begin");
+  try {
+    db.prepare("delete from rail_cost_rail_public_quotes where agentCode = ?").run(normalizedAgent);
+    const insert = db.prepare(
+      "insert into rail_cost_rail_public_quotes (agentCode, borderCode, destinationStationCode, containerSize, ownership, quoteUsd, enabled) values (?, ?, ?, ?, ?, ?, ?)",
+    );
+    for (const row of rows) {
+      insert.run(row.agentCode, row.borderCode, row.destinationStationCode, row.containerSize, row.ownership, row.quoteUsd, row.enabled);
+    }
+    const importResult = db
+      .prepare(
+        "insert into rail_cost_quote_imports (agentCode, sourceType, fileName, effectiveFrom, effectiveTo, quoteCount, importedBy) values (?, ?, ?, ?, ?, ?, ?)",
+      )
+      .run(normalizedAgent, sourceType, safeFileName, String(effectiveFrom || ""), String(effectiveTo || ""), rows.length, String(importedBy || ""));
+    db.exec("commit");
+    return {
+      id: Number(importResult.lastInsertRowid),
+      agentCode: normalizedAgent,
+      sourceType,
+      fileName: safeFileName,
+      effectiveFrom: String(effectiveFrom || ""),
+      effectiveTo: String(effectiveTo || ""),
+      quoteCount: rows.length,
+    };
+  } catch (error) {
+    db.exec("rollback");
+    throw error;
+  }
 }
 
 function importCurrentQuotes(db, quotes) {
@@ -284,4 +366,8 @@ function hasUniqueIndexOn(db, table, expectedColumns) {
       const columns = db.prepare(`pragma index_info(${index.name})`).all().map((column) => column.name);
       return columns.join(",") === expectedColumns.join(",");
     });
+}
+
+function importError(code, message, statusCode = 400) {
+  return Object.assign(new Error(message), { code, statusCode });
 }
