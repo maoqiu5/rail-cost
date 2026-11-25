@@ -1,4 +1,4 @@
-﻿import {
+import {
   calculateRailCost,
   calculateLeaseCost,
   findRailDestinationFromInput,
@@ -109,7 +109,10 @@ function renderStaticText() {
 
 function renderEmptyResults() {
   if (!lastRailData) railResult.innerHTML = `<p class="empty">${t(currentLocale, "rail.empty")}</p>`;
-  if (!lastLeaseData) leaseResult.innerHTML = `<p class="empty">${t(currentLocale, "lease.empty")}</p>`;
+  if (!lastLeaseData) {
+    const leaseKey = catalog.leasePrices.length ? "lease.empty" : "error.lease.noContainer";
+    leaseResult.innerHTML = `<p class="empty">${t(currentLocale, leaseKey)}</p>`;
+  }
 }
 
 function setLocale(locale, { persist }) {
