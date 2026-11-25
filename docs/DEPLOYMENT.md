@@ -1,4 +1,4 @@
-# Rail Cost Deployment
+﻿# Rail Cost Deployment
 
 ## Basic Information
 
@@ -18,15 +18,15 @@ Rail Cost is a small Node.js service using the built-in `node:sqlite` module. Th
 
 - Public page and static assets under `/rail-cost/`.
 - `GET /health`.
-- `GET /api/me`.
 - `GET /api/query/bootstrap`.
-- Admin-only `GET/POST/PUT/DELETE /api/admin/:resource`.
+
+The legacy admin-only `/api/admin/*` endpoints and data-maintenance page have been removed.
 
 The app listens on port `8036`. In Docker it must use `HOST=0.0.0.0` and join the shared `brianhub_edge` network so the BrianHub gateway container can reach it at `rail-cost:8036`. Public `80/443` traffic stays with the BrianHub gateway.
 
 ## Current VPS Deployment (Confirmed 2026-08-25)
 
-The production `/root/apps/rail-cost` currently runs as a **manually created Docker container** (no Compose/Dockerfile in the project). Confirmed container details:
+The production `/root/apps/rail-cost` runs as a **manually created Docker container** (no Compose/Dockerfile in the project). Confirmed container details:
 
 - Container name: `rail-cost`
 - Image: `node:24-bookworm` (Node 24)
@@ -65,15 +65,13 @@ docker exec rail-cost curl -fsS http://127.0.0.1:8036/health
 
 ## BrianHub Headers
 
-The gateway must keep `/rail-cost/*` behind BrianHub SSO and forward:
+The gateway keeps `/rail-cost/*` behind BrianHub SSO and forwards:
 
 - `X-BrianHub-User`
 - `X-BrianHub-Role`
 - `X-BrianHub-Locale`
 
-Only users whose forwarded role list contains `admin` can see or use the data maintenance page. Unknown locale values fall back to `en-US`.
-
-The gateway is the security boundary for these headers. It must strip or overwrite any client-supplied `X-BrianHub-*` request headers before proxying to rail-cost, then set trusted values from BrianHub auth. Do not expose the rail-cost service directly to the public network.
+The gateway is the security boundary for these headers. It strips or overwrites client-supplied `X-BrianHub-*` request headers before proxying to rail-cost, then sets trusted values from BrianHub auth. Do not expose the rail-cost service directly to the public network.
 
 ## Database
 
@@ -83,7 +81,9 @@ The database file is independent from all other projects:
 /root/apps/rail-cost/data/rail-cost.db
 ```
 
-On startup, the service creates missing tables and seeds missing default rows. It uses `insert or ignore`, so existing edited rows are not overwritten by restart.
+On startup, the service ensures the schema, inserts the four agent records (`TC`, `BA`, `FESCO`, `LOA`), and imports the current TC quote data. Quote data is versioned with the `quote_data_version` meta key.
+
+The container lease prices are currently empty because containers are in short supply.
 
 ## Sensitive Files
 
@@ -101,14 +101,13 @@ Do not commit these files:
 
 ## Local Verification
 
-Use the bundled or system Node.js 24+ runtime. Run SQLite-dependent checks in a Node 24 container or runtime; host Node 18 on the VPS cannot load `node:sqlite`:
+Use the bundled or system Node.js 24+ runtime:
 
 ```bash
 node --disable-warning=ExperimentalWarning tools/test_db.js
 node --disable-warning=ExperimentalWarning tools/test_api.js
 node tools/test_i18n.js
 node --disable-warning=ExperimentalWarning tools/test_calculator.js
-node tools/test_admin_display.js
 node tools/test_html_smoke.js
 ```
 
@@ -126,8 +125,8 @@ Open `http://127.0.0.1:8036/rail-cost/`.
 2. Commit and push to GitHub.
 3. On the VPS, pull the GitHub commit into `/root/apps/rail-cost`.
 4. Preserve `/root/apps/rail-cost/web/data/` and `/root/apps/rail-cost/data/`.
-5. Restart or recreate the Docker container: `docker restart rail-cost` (if code changed in a bind-mounted directory, a restart is enough; if container metadata needs updating, recreate with the `docker run` command above).
-6. Ensure the BrianHub gateway proxies `/rail-cost/*` to `rail-cost:8036` and forwards the BrianHub headers.
+5. Restart the Docker container: `docker restart rail-cost`.
+6. Ensure the BrianHub gateway proxies `/rail-cost/*` to `rail-cost:8036`.
 7. Verify:
 
 ```bash

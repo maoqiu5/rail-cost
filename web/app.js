@@ -1,11 +1,9 @@
-import {
+﻿import {
   calculateRailCost,
   calculateLeaseCost,
   findRailDestinationFromInput,
-  getAvailableLeasePickups,
-} from "./calculator.js?v=20260813-rail-quote-rule-fallback";
-import { initAdminModule } from "./admin.js?v=20260813-rail-quote-rule-fallback";
-import { localeCookieString, resolveInitialLocale, t } from "./i18n.js?v=20260813-rail-quote-rule-fallback";
+} from "./calculator.js?v=20261102-agent-quotes";
+import { localeCookieString, resolveInitialLocale, t } from "./i18n.js?v=20261102-agent-quotes";
 
 const railDestinationInput = document.querySelector("#railDestination");
 const railDestinationOptions = document.querySelector("#railDestinationOptions");
@@ -15,10 +13,6 @@ const railResult = document.querySelector("#railResult");
 const leaseResult = document.querySelector("#leaseResult");
 const pickupInput = document.querySelector("#pickup");
 const localeSwitch = document.querySelector("#localeSwitch");
-const railNav = document.querySelector("#railNav");
-const adminNav = document.querySelector("#adminNav");
-const queryView = document.querySelector("#queryView");
-const adminView = document.querySelector("#adminView");
 
 let currentLocale = resolveInitialLocale({
   headerLocale: document.documentElement.dataset.bhHeaderLocale,
@@ -27,7 +21,6 @@ let currentLocale = resolveInitialLocale({
 let catalog = emptyCatalog();
 let lastRailData = null;
 let lastLeaseData = null;
-let adminModule = null;
 
 function optionLabel(item) {
   return `${item.nameCn} / ${item.nameEn} / ${item.stationCode}`;
@@ -37,8 +30,20 @@ function pickupLabel(item) {
   return `${item.nameCn} / ${item.nameEn}`;
 }
 
+function agentLabel(item) {
+  return currentLocale === "zh-CN" ? item.nameCn : item.nameEn;
+}
+
 function displayName(item) {
   return currentLocale === "zh-CN" ? item.nameCn : item.nameEn;
+}
+
+function renderAgentSelects() {
+  document.querySelectorAll("[data-agent-select]").forEach((select) => {
+    const selected = select.value;
+    select.innerHTML = catalog.agents.map((item) => `<option value="${escapeHtml(item.code)}">${escapeHtml(agentLabel(item))}</option>`).join("");
+    if (selected) select.value = selected;
+  });
 }
 
 function renderBorderSelects() {
@@ -98,8 +103,8 @@ function renderStaticText() {
     button.classList.toggle("active", active);
     button.setAttribute("aria-pressed", String(active));
   });
+  renderAgentSelects();
   renderBorderSelects();
-  adminModule?.renderLocale();
 }
 
 function renderEmptyResults() {
@@ -116,29 +121,9 @@ function setLocale(locale, { persist }) {
   if (lastLeaseData) renderLease(lastLeaseData);
 }
 
-function showView(view) {
-  const adminSelected = view === "admin";
-  queryView.hidden = adminSelected;
-  adminView.hidden = !adminSelected;
-  railNav.classList.toggle("active", !adminSelected);
-  adminNav.classList.toggle("active", adminSelected);
-  railNav.setAttribute("aria-current", adminSelected ? "false" : "page");
-  adminNav.setAttribute("aria-current", adminSelected ? "page" : "false");
-  if (adminSelected) adminModule?.load();
-}
-
-railDestinationInput.addEventListener("focus", () => {
-  showDestinationOptions({ filter: false });
-});
-
-railDestinationInput.addEventListener("click", () => {
-  showDestinationOptions({ filter: false });
-});
-
-railDestinationInput.addEventListener("input", () => {
-  showDestinationOptions({ filter: true });
-});
-
+railDestinationInput.addEventListener("focus", () => showDestinationOptions({ filter: false }));
+railDestinationInput.addEventListener("click", () => showDestinationOptions({ filter: false }));
+railDestinationInput.addEventListener("input", () => showDestinationOptions({ filter: true }));
 railDestinationInput.addEventListener("keydown", (event) => {
   if (event.key === "Escape") hideDestinationOptions();
 });
@@ -163,14 +148,12 @@ localeSwitch.addEventListener("click", (event) => {
   setLocale(button.dataset.locale, { persist: true });
 });
 
-railNav.addEventListener("click", () => showView("query"));
-adminNav.addEventListener("click", () => showView("admin"));
-
 railForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const form = new FormData(railForm);
   lastRailData = calculateRailCost(
     {
+      agentCode: form.get("agent"),
       border: form.get("border"),
       destinationCode: resolveDestination()?.stationCode,
       containerSize: form.get("containerSize"),
@@ -186,6 +169,7 @@ leaseForm.addEventListener("submit", (event) => {
   const form = new FormData(leaseForm);
   lastLeaseData = calculateLeaseCost(
     {
+      agentCode: form.get("agent"),
       border: form.get("leaseBorder"),
       pickupCode: resolvePickup()?.code,
       containerSize: form.get("leaseContainerSize"),
@@ -201,11 +185,11 @@ function renderRail(data) {
     return;
   }
   railResult.innerHTML = `
+    <div class="metric"><span>${t(currentLocale, "rail.result.agent")}</span><strong>${escapeHtml(agentLabel(data.agent))}</strong></div>
     <div class="metric"><span>${t(currentLocale, "rail.result.destination")}</span><strong>${escapeHtml(optionLabel(data.destination))}</strong></div>
-    <div class="metric"><span>${t(currentLocale, "rail.result.base")}</span><strong>$${usd(data.baseUsd)}</strong></div>
-    <div class="metric"><span>${t(currentLocale, "rail.result.adjustment")}</span><strong>${signed(data.adjustmentUsd)}</strong></div>
+    <div class="metric"><span>${t(currentLocale, "rail.result.ownership")}</span><strong>${escapeHtml(data.ownership)}</strong></div>
     <div class="total"><span>${t(currentLocale, "rail.result.total")}</span><strong>$${usd(data.totalUsd)}</strong></div>
-    <p class="note">${t(currentLocale, data.ruleKey, data.ruleParams)}</p>`;
+    <p class="note">${t(currentLocale, data.ruleKey)}</p>`;
 }
 
 function renderLease(data) {
@@ -214,6 +198,7 @@ function renderLease(data) {
     return;
   }
   leaseResult.innerHTML = `
+    <div class="metric"><span>${t(currentLocale, "lease.result.agent")}</span><strong>${escapeHtml(agentLabel(data.agent))}</strong></div>
     <div class="metric"><span>${t(currentLocale, "lease.result.pickup")}</span><strong>${escapeHtml(pickupLabel(data.pickup))}</strong></div>
     <div class="metric"><span>${t(currentLocale, "lease.result.table")}</span><strong>$${usd(data.tableUsd)}</strong></div>
     <div class="metric"><span>${t(currentLocale, "lease.result.adjustment")}</span><strong>${signed(data.adjustmentUsd)}</strong></div>
@@ -229,59 +214,33 @@ function signed(value) {
   return `${value > 0 ? "+" : ""}$${usd(value)}`;
 }
 
-async function fetchJson(path, options) {
-  const response = await fetch(path, options);
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return response.json();
-}
-
 async function loadCatalog() {
-  catalog = await fetch("./api/query/bootstrap");
-  if (!catalog.ok) throw new Error(`HTTP ${catalog.status}`);
-  catalog = await catalog.json();
+  const response = await fetch("./api/query/bootstrap");
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  catalog = await response.json();
+  renderAgentSelects();
   renderBorderSelects();
   renderPickupList();
 }
 
 async function init() {
-  const me = await fetch("./api/me")
-    .then((response) => (response.ok ? response.json() : { isAdmin: false }))
-    .catch(() => ({ isAdmin: false }));
-
-  adminNav.hidden = !me.isAdmin;
   await loadCatalog().catch(() => {
     railResult.innerHTML = `<p class="empty">${t(currentLocale, "app.loadError")}</p>`;
     leaseResult.innerHTML = `<p class="empty">${t(currentLocale, "app.loadError")}</p>`;
   });
 
-  adminModule = initAdminModule({
-    nav: document.querySelector("#adminResourceNav"),
-    table: document.querySelector("#adminTable"),
-    form: document.querySelector("#adminForm"),
-    title: document.querySelector("#adminResourceTitle"),
-    status: document.querySelector("#adminStatus"),
-    newButton: document.querySelector("#adminNew"),
-    t: (key) => t(currentLocale, key),
-    fetchJson,
-    onDataChanged: loadCatalog,
-    getCatalog: () => catalog,
-  });
-
   renderStaticText();
   renderEmptyResults();
-  showView("query");
 }
 
 function emptyCatalog() {
   return {
+    agents: [],
     borders: [],
     destinations: [],
     railPublicQuotes: [],
-    railRules: [],
     leasePickups: [],
-    leaseTablePrices: [],
     leasePrices: [],
-    leaseRules: [],
   };
 }
 

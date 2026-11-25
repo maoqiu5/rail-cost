@@ -1,5 +1,16 @@
 # Rail Cost Changelog
 
+## 2026-11-02
+
+- Imported the TC `TOP客户-全铁公共报价单2026.11.01.pdf` quote for 2026-11-01 to 2026-11-30.
+- Added the agent dimension (`TC`, `BA`, `FESCO`, `LOA`) to quote storage and query flows.
+- Added agent selectors to the rail cost and container lease query forms.
+- Imported TC Manzhouli and Erlian COC/SOC freight quotes exactly as published.
+- Added Kupavna (230506) and Kresty (181403) destination stations.
+- Cleared container lease prices because containers are currently in short supply.
+- Removed the data-maintenance page, `/api/admin/*` endpoints, admin tests, and admin UI copy.
+- Replaced the legacy public quote PDF download with the November 2026 TC quote PDF.
+
 ## 2026-08-11
 
 - Added a dedicated SQLite database for rail-cost data.

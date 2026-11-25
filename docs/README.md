@@ -1,6 +1,6 @@
-# Rail Cost Docs
+﻿# Rail Cost Docs
 
-Rail Cost is a standalone BrianHub project for overseas rail cost lookup, TC container lease lookup, source PDF downloads, and admin-only data maintenance.
+Rail Cost is a standalone BrianHub project for overseas rail freight quote lookup by agent, transshipment border, destination station, container size, and SOC/COC ownership.
 
 ## Documents
 
@@ -12,11 +12,14 @@ Rail Cost is a standalone BrianHub project for overseas rail cost lookup, TC con
 
 - This project is independent from `rates`.
 - Business data is stored in the dedicated rail-cost SQLite database.
-- Original PDFs stay in `web/data/` and must not be committed.
+- Original quote PDFs stay in `web/data/` and must not be committed.
 - Database files under `data/` are runtime state and must not be committed.
+- The legacy data-maintenance page and `/api/admin/*` endpoints have been removed.
 
-## Price Maintenance
+## Quote Sources
 
-- `rail_cost_freight_prices`: final rail freight prices by border, destination station, and container size.
-- `rail_cost_lease_prices`: final lease prices by border, pickup location, and container size; the admin page edits only `displayPriceUsd`.
-- Admin users maintain final prices directly; query pages read only the final price tables.
+- Agent quotes are imported from source PDF/XLSX quote sheets.
+- Supported agents currently include `TC`, `BA`, `FESCO`, and `LOA`.
+- TC November 2026 quote data is imported under agent `TC`.
+- COC prices represent the COC freight portion only and do not include container lease fees.
+- Container lease prices are currently empty because containers are in short supply.

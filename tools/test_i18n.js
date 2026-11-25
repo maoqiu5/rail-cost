@@ -1,4 +1,4 @@
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import {
   SUPPORTED_LOCALES,
   TRANSLATIONS,
@@ -48,36 +48,32 @@ for (const locale of SUPPORTED_LOCALES) {
     assert.equal(typeof TRANSLATIONS[locale][key], "string", `${locale} missing i18n key: ${key}`);
     assert.notEqual(TRANSLATIONS[locale][key], "", `${locale} has empty i18n key: ${key}`);
   }
+  for (const key of Object.keys(TRANSLATIONS[locale])) {
+    assert.equal(key.startsWith("admin."), false, `${locale} should not contain removed admin key: ${key}`);
+  }
 }
 
 assert.equal(t("en-US", "app.title"), "Rail Cost Desk");
 assert.equal(t("zh-CN", "app.title"), "境外段成本查询");
+assert.equal(t("en-US", "rail.agent"), "Agent");
+assert.equal(t("zh-CN", "rail.agent"), "代理");
 assert.equal(t("en-US", "rail.submit"), "Calculate rail cost");
-assert.equal(t("zh-CN", "rail.submit"), "查询成本");
+assert.equal(t("zh-CN", "rail.submit"), "查询运费");
 assert.equal(t("fr-FR", "rail.submit"), "Calculate rail cost");
-assert.equal(t("en-US", "nav.admin"), "Data Maintenance");
-assert.equal(t("zh-CN", "nav.admin"), "数据维护");
+assert.equal(t("zh-CN", "error.lease.noContainer"), "当前缺箱，暂无租箱报价。");
 
 for (const key of [
-  "admin.title",
-  "admin.empty",
-  "admin.actions",
-  "admin.save",
-  "admin.delete",
-  "admin.new",
-  "admin.error.load",
-  "admin.error.save",
-  "admin.error.delete",
-  "admin.sections.priceMaintenance",
-  "admin.resources.freightPrices",
-  "admin.resources.leasePrices",
-  "admin.fields.socPriceUsd",
-  "admin.fields.cocPriceUsd",
-  "admin.fields.displayPriceUsd",
-  "admin.error.finalPriceNonNegative",
+  "rail.agent",
+  "rail.result.agent",
+  "lease.agent",
+  "error.rail.unknownAgent",
+  "error.rail.noQuote",
+  "error.lease.noContainer",
+  "rule.rail.importedQuote",
+  "rule.lease.importedQuote",
 ]) {
-  assert.equal(typeof TRANSLATIONS["en-US"][key], "string", `en-US missing admin key: ${key}`);
-  assert.equal(typeof TRANSLATIONS["zh-CN"][key], "string", `zh-CN missing admin key: ${key}`);
+  assert.equal(typeof TRANSLATIONS["en-US"][key], "string", `en-US missing key: ${key}`);
+  assert.equal(typeof TRANSLATIONS["zh-CN"][key], "string", `zh-CN missing key: ${key}`);
 }
 
 console.log("i18n tests passed");

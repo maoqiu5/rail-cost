@@ -1,4 +1,4 @@
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -15,15 +15,7 @@ const dir = mkdtempSync(join(tmpdir(), "rail-cost-calc-"));
 const db = openDatabase(join(dir, "rail-cost.db"));
 ensureSchema(db);
 seedDatabase(db);
-db.prepare("insert into rail_cost_freight_prices (borderCode, destinationStationCode, containerSize, socPriceUsd, cocPriceUsd, enabled) values (?, ?, ?, ?, ?, 1)").run(
-  "ERLIAN",
-  "033004",
-  "40",
-  4250,
-  4380,
-);
 const catalog = loadQueryData(db);
-assert.equal(catalog.freightPrices.some((row) => row.borderCode === "MANZHOULI" && row.destinationStationCode === "183502"), true);
 
 const vorsino = findRailDestination("Vorsino", catalog);
 assert.equal(vorsino.stationCode, "183502");
@@ -32,150 +24,52 @@ assert.equal(vorsino.nameCn, "沃尔西诺");
 assert.equal(
   findRailDestinationFromInput("谢利亚基诺 / Selyatino / 181102", catalog)?.stationCode,
   "181102",
-  "destination input label should resolve to the newly selected station",
-);
-
-assert.deepEqual(
-  calculateRailCost({
-    border: "MANZHOULI",
-    destinationCode: "183502",
-    containerSize: "40",
-    ownership: "SOC",
-  }, catalog).totalUsd,
-  3850,
-  "Manzhouli 40 SOC should use the ownership-specific quote when maintained",
+  "destination input label should resolve to the selected station",
 );
 
 assert.equal(
-  calculateRailCost({
-    border: "MANZHOULI",
-    destinationCode: "183502",
-    containerSize: "40",
-    ownership: "COC",
-  }, catalog).totalUsd,
-  3850,
-  "Manzhouli 40 COC should use the ownership-specific quote when maintained",
+  calculateRailCost({ agentCode: "TC", border: "MANZHOULI", destinationCode: "183502", containerSize: "40", ownership: "SOC" }, catalog).totalUsd,
+  3900,
+  "Manzhouli Vorsino 40 SOC should use the TC November quote",
 );
-
 assert.equal(
-  calculateRailCost({
-    border: "ERLIAN",
-    destinationCode: "033004",
-    containerSize: "40",
-    ownership: "SOC",
-  }, catalog).totalUsd,
-  4250,
-  "Erlian Shushary 40 SOC should use the maintained final freight price",
+  calculateRailCost({ agentCode: "TC", border: "MANZHOULI", destinationCode: "183502", containerSize: "40", ownership: "COC" }, catalog).totalUsd,
+  3930,
+  "Manzhouli Vorsino 40 COC should use the TC November quote",
 );
-
 assert.equal(
-  calculateRailCost({
-    border: "ERLIAN",
-    destinationCode: "033004",
-    containerSize: "40",
-    ownership: "COC",
-  }, catalog).totalUsd,
-  4380,
-  "Erlian Shushary 40 COC should use the maintained final freight price",
+  calculateRailCost({ agentCode: "TC", border: "MANZHOULI", destinationCode: "183502", containerSize: "20", ownership: "SOC" }, catalog).totalUsd,
+  1854,
+  "Manzhouli Vorsino 20 should use the TC November quote",
 );
-
 assert.equal(
-  calculateRailCost({
-    border: "MANZHOULI",
-    destinationCode: "183502",
-    containerSize: "20",
-    ownership: "SOC",
-  }, catalog).totalUsd,
-  1767,
-  "Manzhouli 20 should use public quote directly",
+  calculateRailCost({ agentCode: "TC", border: "ERLIAN", destinationCode: "183502", containerSize: "40", ownership: "SOC" }, catalog).totalUsd,
+  4550,
+  "Erlian Vorsino 40 SOC should use the TC November quote",
 );
-
 assert.equal(
-  calculateRailCost({
-    border: "ERLIAN",
-    destinationCode: "181102",
-    containerSize: "40",
-    ownership: "COC",
-  }, catalog).totalUsd,
-  4300,
-  "Erlian Selyatino 40 COC should use fixed cost",
-);
-
-assert.equal(
-  calculateRailCost({
-    border: "ERLIAN",
-    destinationCode: "144809",
-    containerSize: "40",
-    ownership: "SOC",
-  }, catalog).totalUsd,
+  calculateRailCost({ agentCode: "TC", border: "ERLIAN", destinationCode: "183502", containerSize: "40", ownership: "COC" }, catalog).totalUsd,
   4330,
-  "Erlian Minsk/Kolyadichi 40 should use fixed cost",
+  "Erlian Vorsino 40 COC should use the TC November quote",
 );
 
-assert.equal(
-  calculateRailCost({
-    border: "ERLIAN",
-    destinationCode: "183502",
-    containerSize: "20",
-    ownership: "SOC",
-  }, catalog).available,
-  false,
-  "Erlian should not provide 20 ft cost",
+const missingQuote = calculateRailCost(
+  { agentCode: "TC", border: "ERLIAN", destinationCode: "183502", containerSize: "20", ownership: "SOC" },
+  catalog,
 );
+assert.equal(missingQuote.available, false);
+assert.equal(missingQuote.reasonKey, "error.rail.noQuote");
 
-assert.equal(
-  calculateLeaseCost({
-    border: "MANZHOULI",
-    pickupCode: "TAICANG",
-    containerSize: "40",
-  }, catalog).totalUsd,
-  1900,
-  "Manzhouli 40 Taicang lease should be fixed at 1900",
+const unknownAgent = calculateRailCost(
+  { agentCode: "UNKNOWN", border: "MANZHOULI", destinationCode: "183502", containerSize: "40", ownership: "SOC" },
+  catalog,
 );
+assert.equal(unknownAgent.available, false);
+assert.equal(unknownAgent.reasonKey, "error.rail.unknownAgent");
 
-assert.equal(
-  calculateLeaseCost({
-    border: "MANZHOULI",
-    pickupCode: "XINGANG",
-    containerSize: "40",
-  }, catalog).totalUsd,
-  1700,
-  "Manzhouli 40 Tianjin lease should be table price 1850 - 150",
-);
-
-assert.equal(
-  calculateLeaseCost({
-    border: "MANZHOULI",
-    pickupCode: "SHANGHAI",
-    containerSize: "20",
-  }, catalog).totalUsd,
-  300,
-  "Manzhouli 20 lease should be table price - 100",
-);
-
-assert.equal(
-  calculateLeaseCost({
-    border: "ERLIAN",
-    pickupCode: "TAICANG",
-    containerSize: "40",
-  }, catalog).totalUsd,
-  1930,
-  "Erlian 40 Taicang lease should be fixed at 1930",
-);
-
-assert.equal(
-  calculateLeaseCost({
-    border: "ERLIAN",
-    pickupCode: "NINGBO",
-    containerSize: "20",
-  }, catalog).available,
-  false,
-  "Erlian lease should not provide 20 ft",
-);
-
-assert.ok(
-  getAvailableLeasePickups("MANZHOULI", "40", catalog).some((item) => item.code === "XINGANG"),
-  "Manzhouli 40 should expose Tianjin/Xingang pickup option",
-);
+const lease = calculateLeaseCost({ agentCode: "TC", border: "MANZHOULI", pickupCode: "TAICANG", containerSize: "40" }, catalog);
+assert.equal(lease.available, false);
+assert.equal(lease.reasonKey, "error.lease.noContainer");
+assert.deepEqual(getAvailableLeasePickups("TC", "MANZHOULI", "40", catalog), []);
 
 console.log("calculator tests passed");
