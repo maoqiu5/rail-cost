@@ -26,7 +26,7 @@ Rail Cost is a small Node.js service using the built-in `node:sqlite` module. Th
 
 The legacy admin-only `/api/admin/*` endpoints and data-maintenance page have been removed.
 
-Runtime dependencies are `pdfjs-dist` for PDF text extraction and `xlsx` for XLSX parsing/template generation. Install them with `npm install --omit=dev` after pulling code.
+Runtime dependencies are `pdfjs-dist` for PDF text extraction and `xlsx` for XLSX parsing/template generation. Install them with `npm ci --omit=dev` after pulling code.
 
 The app listens on port `8036`. In Docker it must use `HOST=0.0.0.0` and join the shared `brianhub_edge` network so the BrianHub gateway container can reach it at `rail-cost:8036`. Public `80/443` traffic stays with the BrianHub gateway.
 
@@ -130,7 +130,7 @@ Open `http://127.0.0.1:8036/rail-cost/`.
 1. Verify locally.
 2. Commit and push to GitHub.
 3. On the VPS, pull the GitHub commit into `/root/apps/rail-cost`.
-4. Install runtime dependencies: `docker exec rail-cost sh -c 'cd /app && npm install --omit=dev'`.
+4. Install runtime dependencies: `docker exec rail-cost sh -c 'cd /app && npm ci --omit=dev'`.
 5. Preserve `/root/apps/rail-cost/web/data/` and `/root/apps/rail-cost/data/`.
 6. Restart the Docker container: `docker restart rail-cost`.
 7. Ensure the BrianHub gateway proxies `/rail-cost/*` to `rail-cost:8036`.
